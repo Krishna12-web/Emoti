@@ -1,6 +1,6 @@
 
 import { cn } from '@/lib/utils';
-import type { Emotion } from '@/lib/types';
+import type { Emotion, Gender } from '@/lib/types';
 import { Bot, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ type AvatarProps = {
   emotion?: Emotion;
   avatarUrl?: string | null;
   onAvatarUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  gender: Gender;
 };
 
 const emotionEmojis: Record<Exclude<Emotion, 'thinking' | 'listening' | 'neutral'>, string> = {
@@ -18,9 +19,17 @@ const emotionEmojis: Record<Exclude<Emotion, 'thinking' | 'listening' | 'neutral
   angry: '😠',
 };
 
-export function Avatar({ emotion = 'neutral', avatarUrl, onAvatarUpload }: AvatarProps) {
+const defaultAvatars: Record<Gender, {url: string, hint: string}> = {
+    female: { url: "https://placehold.co/192x192.png", hint: "woman portrait" },
+    male: { url: "https://placehold.co/192x192.png", hint: "man portrait" },
+}
+
+export function Avatar({ emotion = 'neutral', avatarUrl, onAvatarUpload, gender }: AvatarProps) {
   const animationClass = emotion === 'listening' ? 'nod-animation' : 'breathing-animation';
   const emoji = (emotion && emotion !== 'neutral' && emotion !== 'thinking' && emotion !== 'listening') ? emotionEmojis[emotion] : null;
+
+  const finalAvatarUrl = avatarUrl || defaultAvatars[gender].url;
+  const aiHint = avatarUrl ? "" : defaultAvatars[gender].hint;
 
   if (emotion === 'thinking') {
     return (
@@ -33,12 +42,12 @@ export function Avatar({ emotion = 'neutral', avatarUrl, onAvatarUpload }: Avata
   return (
     <div className={cn("relative w-48 h-48 transition-transform duration-500", animationClass)}>
         <Image
-          src={avatarUrl || "https://placehold.co/192x192.png"}
+          src={finalAvatarUrl}
           alt="EmotiFriend Avatar"
           width={192}
           height={192}
           className="rounded-full object-cover shadow-lg border-4 border-primary/50"
-          data-ai-hint={avatarUrl ? "" : "man portrait"}
+          data-ai-hint={aiHint}
         />
         {emoji && (
           <div className="absolute bottom-0 right-0 text-4xl bg-background/50 rounded-full p-1">

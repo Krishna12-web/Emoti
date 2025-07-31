@@ -13,3 +13,5 @@ export type AnalysisResult = {
   voice?: string;
   face?: string;
 };
+
+export type Gender = 'female' | 'male';

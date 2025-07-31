@@ -2,14 +2,20 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import type { Message, Emotion, AnalysisResult } from '@/lib/types';
+import type { Message, Emotion, AnalysisResult, Gender } from '@/lib/types';
 import { useConversation } from '@/hooks/use-conversation';
 import { getAdaptiveResponse, performFacialAnalysis, performTextAnalysis, performVoiceAnalysis, getAudioResponse, performTranslation, performSpeechToText } from '@/lib/actions';
 import { Avatar } from '@/components/emotifriend/avatar';
 import { SupportLinks } from '@/components/emotifriend/support-links';
 import { EmotionStatus } from '@/components/emotifriend/emotion-status';
 import { ChatInterface } from '@/components/emotifriend/chat-interface';
+import { GenderSelector } from '@/components/emotifriend/gender-selector';
 import { useToast } from "@/hooks/use-toast";
+
+const defaultAvatars: Record<Gender, string> = {
+    female: "https://placehold.co/192x192.png",
+    male: "https://placehold.co/192x192.png",
+}
 
 export default function Home() {
   const { messages, addMessage, history } = useConversation();
@@ -20,6 +26,7 @@ export default function Home() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult>({});
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [language, setLanguage] = useState<string>("English");
+  const [gender, setGender] = useState<Gender>('female');
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -78,7 +85,7 @@ export default function Home() {
         pastConversations: history,
       });
 
-      const audioPromise = getAudioResponse( (await responsePromise).response);
+      const audioPromise = getAudioResponse({text: (await responsePromise).response, voice: gender});
 
       const [response, audioResponse] = await Promise.all([responsePromise, audioPromise]);
 
@@ -239,6 +246,7 @@ export default function Home() {
         <header className="w-full py-4">
           <h1 className="text-4xl font-headline text-center text-primary-foreground/80">EmotiFriend</h1>
           <SupportLinks />
+          <GenderSelector gender={gender} onGenderChange={setGender} />
         </header>
 
         <div className="flex-shrink-0 flex justify-center items-center py-6">
@@ -246,6 +254,7 @@ export default function Home() {
             emotion={isThinking ? 'thinking' : currentEmotion}
             avatarUrl={avatarUrl}
             onAvatarUpload={handleAvatarUpload}
+            gender={gender}
           />
         </div>
         
