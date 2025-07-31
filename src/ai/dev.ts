@@ -1,1 +1,7 @@
-// Flows will be imported for their side effects in this file.
+import { config } from 'dotenv';
+config();
+
+import '@/ai/flows/generate-adaptive-response.ts';
+import '@/ai/flows/analyze-facial-expressions.ts';
+import '@/ai/flows/analyze-voice-tone.ts';
+import '@/ai/flows/analyze-text-sentiment.ts';
