@@ -67,7 +67,9 @@ export default function Home() {
     setIsThinking(true);
     setCurrentEmotion('thinking');
     setVideoUrl(null); // Clear previous video
-    addMessage({ text, sender: 'user' });
+    
+    const userMessage: Omit<Message, 'id'| 'timestamp'> = { text, sender: 'user' };
+    addMessage(userMessage);
 
     try {
       let translatedText = text;
@@ -89,14 +91,29 @@ export default function Home() {
 
       const currentAvatar = avatarUrl || defaultAvatars[gender];
 
-      // Generate talking video
-      const videoResponse = await generateTalkingVideo({
-          avatarDataUri: currentAvatar,
-          text: response.response,
-      });
-      setVideoUrl(videoResponse.videoDataUri);
+      let audioDataUri: string | undefined;
+
+      try {
+        // Generate talking video
+        const videoResponse = await generateTalkingVideo({
+            avatarDataUri: currentAvatar,
+            text: response.response,
+        });
+        setVideoUrl(videoResponse.videoDataUri);
+      } catch (videoError) {
+        console.error("Video generation failed, falling back to audio:", videoError);
+        toast({
+          variant: "destructive",
+          title: "Video Generation Failed",
+          description: "Could not generate video. The AI will respond with audio only. This may be due to account billing status.",
+        });
+        const audioResponse = await getAudioResponse({ text: response.response, voice: gender });
+        audioDataUri = audioResponse.audioDataUri;
+        handlePlayAudio(audioDataUri);
+      }
       
-      addMessage({ text: response.response, sender: 'ai' });
+      const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai', audioDataUri };
+      addMessage(aiMessage);
       
       const userEmotion = mapSentimentToEmotion(combinedEmotion);
       setCurrentEmotion(userEmotion);
