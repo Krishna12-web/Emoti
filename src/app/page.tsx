@@ -110,18 +110,19 @@ export default function Home() {
     }
 
     try {
-      streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      streamRef.current = stream;
       setIsListening(true);
       setCurrentEmotion('listening');
-      
-      const recorder = new MediaRecorder(streamRef.current);
+
+      const recorder = new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       const audioChunks: Blob[] = [];
-      
+
       recorder.ondataavailable = (event) => {
         audioChunks.push(event.data);
       };
-      
+
       recorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
         const reader = new FileReader();
@@ -134,6 +135,12 @@ export default function Home() {
             setAnalysisResult(prev => ({ ...prev, voice: result.emotion }));
             const emotion = mapSentimentToEmotion(result.emotion);
             setCurrentEmotion(emotion);
+            
+            // This is a simplified stand-in for a proper speech-to-text implementation.
+            // In a real application, you would use a speech-to-text API.
+            const voiceInput = "User spoke, but transcription is not implemented.";
+            await handleSendMessage(voiceInput);
+            
           } catch(e) {
              toast({ variant: "destructive", title: "Voice Analysis Failed", description: "I couldn't understand the audio. Please try again." });
              setCurrentEmotion('sad');
@@ -141,13 +148,15 @@ export default function Home() {
             setIsThinking(false);
           }
         };
-        cleanupMedia();
       };
-      
+
       recorder.start();
+
       setTimeout(() => {
-        if(recorder.state === 'recording') recorder.stop();
-      }, 4000);
+        if (recorder.state === 'recording') {
+          recorder.stop();
+        }
+      }, 5000); // Record for 5 seconds
 
     } catch (error) {
       console.error('Error accessing microphone:', error);

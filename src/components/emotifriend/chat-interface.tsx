@@ -83,6 +83,8 @@ export function ChatInterface({
       handleSend();
     }
   };
+  
+  const isInputDisabled = isThinking || isListening || isCapturingFace;
 
   return (
     <div className="flex flex-col flex-grow w-full bg-primary/10 rounded-t-2xl shadow-inner overflow-hidden mt-4">
@@ -98,11 +100,11 @@ export function ChatInterface({
         <div className="relative flex items-center gap-2">
           <Textarea
             ref={textareaRef}
-            placeholder="Type your feelings here..."
+            placeholder={isListening ? "Listening..." : "Type your feelings here..."}
             className="flex-grow pr-24 bg-input shadow-sm resize-none"
             rows={1}
             onKeyDown={handleKeyDown}
-            disabled={isThinking || isListening || isCapturingFace}
+            disabled={isInputDisabled}
           />
           <div className="absolute right-2 flex items-center gap-1">
              <Button
@@ -128,7 +130,7 @@ export function ChatInterface({
             <Button
               size="icon"
               onClick={handleSend}
-              disabled={isThinking || isListening || isCapturingFace}
+              disabled={isInputDisabled}
               className="bg-accent hover:bg-accent/90"
               aria-label="Send message"
             >
