@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -46,7 +47,7 @@ const generateAvatarFromPhotoFlow = ai.defineFlow(
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: [
         {
-          text: 'Generate a highly realistic, photorealistic portrait of the person in this photo. The generated image should be indistinguishable from a real photograph. The avatar should have a neutral, pleasant expression. It should be a bust shot (head and shoulders) on a simple, neutral background.',
+          text: 'Generate a clean, un-stylized, photorealistic portrait of the person in this photo. The generated image should look like a real photograph with no filters, effects, or artistic flair. The person should have a neutral, pleasant expression. It should be a bust shot (head and shoulders) on a simple, neutral background.',
         },
         {media: {url: photoDataUri}},
       ],
