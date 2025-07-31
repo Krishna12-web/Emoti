@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Message, Emotion, AnalysisResult } from '@/lib/types';
 import { useConversation } from '@/hooks/use-conversation';
-import { getAdaptiveResponse, performFacialAnalysis, performTextAnalysis, performVoiceAnalysis } from '@/lib/actions';
+import { getAdaptiveResponse, performFacialAnalysis, performTextAnalysis, performVoiceAnalysis, getAudioResponse } from '@/lib/actions';
 import { Avatar } from '@/components/emotifriend/avatar';
 import { SupportLinks } from '@/components/emotifriend/support-links';
 import { EmotionStatus } from '@/components/emotifriend/emotion-status';
@@ -23,6 +23,7 @@ export default function Home() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const { toast } = useToast();
 
@@ -44,6 +45,13 @@ export default function Home() {
     };
   }, [cleanupMedia]);
 
+  const handlePlayAudio = (audioDataUri: string) => {
+    if (audioRef.current) {
+      audioRef.current.src = audioDataUri;
+      audioRef.current.play().catch(e => console.error("Audio playback failed", e));
+    }
+  };
+
   const handleSendMessage = async (text: string) => {
     if (isThinking) return;
 
@@ -57,13 +65,18 @@ export default function Home() {
 
       const combinedEmotion = textAnalysis.sentiment; 
 
-      const response = await getAdaptiveResponse({
+      const responsePromise = getAdaptiveResponse({
         emotion: combinedEmotion,
         userInput: text,
         pastConversations: history,
       });
 
-      addMessage({ text: response.response, sender: 'ai' });
+      const audioPromise = getAudioResponse( (await responsePromise).response);
+
+      const [response, audioResponse] = await Promise.all([responsePromise, audioPromise]);
+
+      addMessage({ text: response.response, sender: 'ai', audioDataUri: audioResponse.audioDataUri });
+      handlePlayAudio(audioResponse.audioDataUri);
       
       const userEmotion = mapSentimentToEmotion(combinedEmotion);
       setCurrentEmotion(userEmotion);
@@ -229,8 +242,10 @@ export default function Home() {
           onFacialAnalysis={handleFacialAnalysis}
           isListening={isListening}
           isCapturingFace={isCapturingFace}
+          onPlayAudio={handlePlayAudio}
         />
         <video ref={videoRef} autoPlay playsInline className="hidden" />
+        <audio ref={audioRef} className="hidden" />
       </div>
     </main>
   );

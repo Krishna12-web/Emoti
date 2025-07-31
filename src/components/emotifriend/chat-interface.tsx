@@ -5,7 +5,7 @@ import type { Message } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, Mic, Video, Square, X } from 'lucide-react';
+import { Send, Mic, Video, Square, X, PlayCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type ChatInterfaceProps = {
@@ -16,9 +16,10 @@ type ChatInterfaceProps = {
   onFacialAnalysis: () => void;
   isListening: boolean;
   isCapturingFace: boolean;
+  onPlayAudio: (audioDataUri: string) => void;
 };
 
-const MessageBubble = ({ msg }: { msg: Message }) => {
+const MessageBubble = ({ msg, onPlayAudio }: { msg: Message, onPlayAudio: (audioDataUri: string) => void }) => {
   const isUser = msg.sender === 'user';
   return (
     <div
@@ -30,12 +31,18 @@ const MessageBubble = ({ msg }: { msg: Message }) => {
       <div
         className={cn(
           "max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-2xl shadow-md",
+          "flex items-center gap-2",
           isUser
             ? "bg-primary text-primary-foreground rounded-br-lg"
             : "bg-card text-card-foreground rounded-bl-lg border"
         )}
       >
         <p className="text-base whitespace-pre-wrap">{msg.text}</p>
+        {!isUser && msg.audioDataUri && (
+          <Button size="icon" variant="ghost" className="shrink-0 w-8 h-8 rounded-full" onClick={() => onPlayAudio(msg.audioDataUri!)}>
+            <PlayCircle className="w-5 h-5" />
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -49,6 +56,7 @@ export function ChatInterface({
   onFacialAnalysis,
   isListening,
   isCapturingFace,
+  onPlayAudio
 }: ChatInterfaceProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -81,9 +89,9 @@ export function ChatInterface({
       <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
         <div className="flex flex-col">
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} msg={msg} />
+            <MessageBubble key={msg.id} msg={msg} onPlayAudio={onPlayAudio} />
           ))}
-          {isThinking && <MessageBubble msg={{ id: 'thinking', sender: 'ai', text: '...', timestamp: Date.now() }} />}
+          {isThinking && <MessageBubble msg={{ id: 'thinking', sender: 'ai', text: '...', timestamp: Date.now() }} onPlayAudio={() => {}} />}
         </div>
       </ScrollArea>
       <div className="p-4 bg-background/80 backdrop-blur-sm border-t border-border">

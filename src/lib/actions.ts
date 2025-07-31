@@ -4,6 +4,7 @@ import { analyzeFacialExpressions, type AnalyzeFacialExpressionsInput, type Anal
 import { analyzeTextSentiment, type AnalyzeTextSentimentInput, type AnalyzeTextSentimentOutput } from "@/ai/flows/analyze-text-sentiment";
 import { analyzeVoiceTone, type AnalyzeVoiceToneInput, type AnalyzeVoiceToneOutput } from "@/ai/flows/analyze-voice-tone";
 import { generateAdaptiveResponse, type GenerateAdaptiveResponseInput, type GenerateAdaptiveResponseOutput } from "@/ai/flows/generate-adaptive-response";
+import { textToSpeech, type TextToSpeechInput, type TextToSpeechOutput } from "@/ai/flows/text-to-speech";
 
 export async function performTextAnalysis(
     input: AnalyzeTextSentimentInput
@@ -27,4 +28,10 @@ export async function getAdaptiveResponse(
     input: GenerateAdaptiveResponseInput
 ): Promise<GenerateAdaptiveResponseOutput> {
   return await generateAdaptiveResponse(input);
+}
+
+export async function getAudioResponse(
+    input: TextToSpeechInput
+): Promise<TextToSpeechOutput> {
+    return await textToSpeech(input);
 }

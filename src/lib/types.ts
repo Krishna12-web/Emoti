@@ -3,6 +3,7 @@ export type Message = {
   text: string;
   sender: 'user' | 'ai';
   timestamp: number;
+  audioDataUri?: string;
 };
 
 export type Emotion = 'neutral' | 'happy' | 'sad' | 'angry' | 'listening' | 'thinking';
