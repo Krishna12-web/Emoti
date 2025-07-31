@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Message, Emotion, AnalysisResult, Gender } from '@/lib/types';
 import { useConversation } from '@/hooks/use-conversation';
-import { getAdaptiveResponse, performFacialAnalysis, performTextAnalysis, performVoiceAnalysis, getAudioResponse, performTranslation, performSpeechToText } from '@/lib/actions';
+import { getAdaptiveResponse, performFacialAnalysis, performTextAnalysis, performVoiceAnalysis, getAudioResponse, performTranslation, performSpeechToText, generateAvatar, generateTalkingVideo } from '@/lib/actions';
 import { Avatar } from '@/components/emotifriend/avatar';
 import { SupportLinks } from '@/components/emotifriend/support-links';
 import { EmotionStatus } from '@/components/emotifriend/emotion-status';
@@ -25,6 +25,7 @@ export default function Home() {
   const [isCapturingFace, setIsCapturingFace] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult>({});
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [language, setLanguage] = useState<string>("English");
   const [gender, setGender] = useState<Gender>('female');
   
@@ -65,6 +66,7 @@ export default function Home() {
 
     setIsThinking(true);
     setCurrentEmotion('thinking');
+    setVideoUrl(null); // Clear previous video
     addMessage({ text, sender: 'user' });
 
     try {
@@ -79,18 +81,22 @@ export default function Home() {
 
       const combinedEmotion = textAnalysis.sentiment; 
 
-      const responsePromise = getAdaptiveResponse({
+      const response = await getAdaptiveResponse({
         emotion: combinedEmotion,
         userInput: translatedText,
         pastConversations: history,
       });
 
-      const audioPromise = getAudioResponse({text: (await responsePromise).response, voice: gender});
+      const currentAvatar = avatarUrl || defaultAvatars[gender];
 
-      const [response, audioResponse] = await Promise.all([responsePromise, audioPromise]);
-
-      addMessage({ text: response.response, sender: 'ai', audioDataUri: audioResponse.audioDataUri });
-      handlePlayAudio(audioResponse.audioDataUri);
+      // Generate talking video
+      const videoResponse = await generateTalkingVideo({
+          avatarDataUri: currentAvatar,
+          text: response.response,
+      });
+      setVideoUrl(videoResponse.videoDataUri);
+      
+      addMessage({ text: response.response, sender: 'ai' });
       
       const userEmotion = mapSentimentToEmotion(combinedEmotion);
       setCurrentEmotion(userEmotion);
@@ -228,12 +234,26 @@ export default function Home() {
     }
   };
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setIsThinking(true);
+      setCurrentEmotion('thinking');
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarUrl(reader.result as string);
+      reader.onloadend = async () => {
+        const photoDataUri = reader.result as string;
+        try {
+          toast({ title: "Generating new avatar...", description: "This might take a moment."});
+          const result = await generateAvatar({ photoDataUri });
+          setAvatarUrl(result.avatarDataUri);
+          toast({ title: "Avatar updated!", description: "Your new avatar is ready."});
+        } catch (error) {
+          console.error("Avatar generation failed:", error);
+          toast({ variant: "destructive", title: "Avatar Generation Failed", description: "I couldn't create an avatar from that image. Please try another one." });
+        } finally {
+          setIsThinking(false);
+          setCurrentEmotion('neutral');
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -253,6 +273,7 @@ export default function Home() {
           <Avatar
             emotion={isThinking ? 'thinking' : currentEmotion}
             avatarUrl={avatarUrl}
+            videoUrl={videoUrl}
             onAvatarUpload={handleAvatarUpload}
             gender={gender}
           />

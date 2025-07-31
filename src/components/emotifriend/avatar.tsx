@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 type AvatarProps = {
   emotion?: Emotion;
   avatarUrl?: string | null;
+  videoUrl?: string | null;
   onAvatarUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   gender: Gender;
 };
@@ -24,7 +25,7 @@ const defaultAvatars: Record<Gender, {url: string, hint: string}> = {
     male: { url: "https://placehold.co/192x192.png", hint: "man portrait" },
 }
 
-export function Avatar({ emotion = 'neutral', avatarUrl, onAvatarUpload, gender }: AvatarProps) {
+export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUpload, gender }: AvatarProps) {
   const animationClass = emotion === 'listening' ? 'nod-animation' : 'breathing-animation';
   const emoji = (emotion && emotion !== 'neutral' && emotion !== 'thinking' && emotion !== 'listening') ? emotionEmojis[emotion] : null;
 
@@ -40,16 +41,30 @@ export function Avatar({ emotion = 'neutral', avatarUrl, onAvatarUpload, gender 
   }
 
   return (
-    <div className={cn("relative w-48 h-48 transition-transform duration-500", animationClass)}>
-        <Image
-          src={finalAvatarUrl}
-          alt="EmotiFriend Avatar"
-          width={192}
-          height={192}
-          className="rounded-full object-cover shadow-lg border-4 border-primary/50"
-          data-ai-hint={aiHint}
-        />
-        {emoji && (
+    <div className={cn("relative w-48 h-48 transition-transform duration-500", !videoUrl && animationClass)}>
+        {videoUrl ? (
+             <video
+                src={videoUrl}
+                width={192}
+                height={192}
+                className="rounded-full object-cover shadow-lg border-4 border-primary/50"
+                autoPlay
+                loop
+                muted
+                playsInline
+             />
+        ) : (
+             <Image
+              src={finalAvatarUrl}
+              alt="EmotiFriend Avatar"
+              width={192}
+              height={192}
+              className="rounded-full object-cover shadow-lg border-4 border-primary/50"
+              data-ai-hint={aiHint}
+            />
+        )}
+
+        {emoji && !videoUrl && (
           <div className="absolute bottom-0 right-0 text-4xl bg-background/50 rounded-full p-1">
             {emoji}
           </div>
