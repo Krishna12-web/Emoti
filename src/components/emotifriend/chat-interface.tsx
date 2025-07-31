@@ -5,8 +5,14 @@ import type { Message } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, Mic, Video, Square, X, PlayCircle } from 'lucide-react';
+import { Send, Mic, Video, Square, X, PlayCircle, Languages } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 type ChatInterfaceProps = {
   messages: Message[];
@@ -17,6 +23,8 @@ type ChatInterfaceProps = {
   isListening: boolean;
   isCapturingFace: boolean;
   onPlayAudio: (audioDataUri: string) => void;
+  language: string;
+  onLanguageChange: (language: string) => void;
 };
 
 const MessageBubble = ({ msg, onPlayAudio }: { msg: Message, onPlayAudio: (audioDataUri: string) => void }) => {
@@ -56,7 +64,9 @@ export function ChatInterface({
   onFacialAnalysis,
   isListening,
   isCapturingFace,
-  onPlayAudio
+  onPlayAudio,
+  language,
+  onLanguageChange,
 }: ChatInterfaceProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -85,6 +95,7 @@ export function ChatInterface({
   };
   
   const isInputDisabled = isThinking || isListening || isCapturingFace;
+  const languages = ['English', 'Spanish', 'French', 'German', 'Hindi', 'Japanese'];
 
   return (
     <div className="flex flex-col flex-grow w-full bg-primary/10 rounded-t-2xl shadow-inner overflow-hidden mt-4">
@@ -101,7 +112,7 @@ export function ChatInterface({
           <Textarea
             ref={textareaRef}
             placeholder={isListening ? "Listening..." : "Type your feelings here..."}
-            className="flex-grow pr-24 bg-input shadow-sm resize-none"
+            className="flex-grow pr-32 bg-input shadow-sm resize-none"
             rows={1}
             onKeyDown={handleKeyDown}
             disabled={isInputDisabled}
@@ -127,6 +138,18 @@ export function ChatInterface({
               >
                 {isCapturingFace ? <X size={20} /> : <Video size={20} />}
               </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="icon" variant="ghost" disabled={isInputDisabled} className="text-primary hover:text-primary/80" aria-label="Select language">
+                  <Languages size={20} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {languages.map((lang) => (
+                  <DropdownMenuItem key={lang} onSelect={() => onLanguageChange(lang)}>{lang}</DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               size="icon"
               onClick={handleSend}

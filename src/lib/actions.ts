@@ -5,6 +5,8 @@ import { analyzeTextSentiment, type AnalyzeTextSentimentInput, type AnalyzeTextS
 import { analyzeVoiceTone, type AnalyzeVoiceToneInput, type AnalyzeVoiceToneOutput } from "@/ai/flows/analyze-voice-tone";
 import { generateAdaptiveResponse, type GenerateAdaptiveResponseInput, type GenerateAdaptiveResponseOutput } from "@/ai/flows/generate-adaptive-response";
 import { textToSpeech, type TextToSpeechInput, type TextToSpeechOutput } from "@/ai/flows/text-to-speech";
+import { translateText, type TranslateTextInput, type TranslateTextOutput } from "@/ai/flows/translate-text";
+import { speechToText, type SpeechToTextInput, type SpeechToTextOutput } from "@/ai/flows/speech-to-text";
 
 export async function performTextAnalysis(
     input: AnalyzeTextSentimentInput
@@ -34,4 +36,17 @@ export async function getAudioResponse(
     input: TextToSpeechInput
 ): Promise<TextToSpeechOutput> {
     return await textToSpeech(input);
+}
+
+export async function performTranslation(
+    text: string,
+    targetLanguage: string
+): Promise<TranslateTextOutput> {
+    return await translateText({ text, targetLanguage });
+}
+
+export async function performSpeechToText(
+    audioDataUri: string
+): Promise<SpeechToTextOutput> {
+    return await speechToText({ audioDataUri });
 }

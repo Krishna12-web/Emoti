@@ -4,7 +4,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Message, Emotion, AnalysisResult } from '@/lib/types';
 import { useConversation } from '@/hooks/use-conversation';
-import { getAdaptiveResponse, performFacialAnalysis, performTextAnalysis, performVoiceAnalysis, getAudioResponse } from '@/lib/actions';
+import { getAdaptiveResponse, performFacialAnalysis, performTextAnalysis, performVoiceAnalysis, getAudioResponse, performTranslation, performSpeechToText } from '@/lib/actions';
 import { Avatar } from '@/components/emotifriend/avatar';
 import { SupportLinks } from '@/components/emotifriend/support-links';
 import { EmotionStatus } from '@/components/emotifriend/emotion-status';
@@ -19,6 +19,7 @@ export default function Home() {
   const [isCapturingFace, setIsCapturingFace] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult>({});
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [language, setLanguage] = useState<string>("English");
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -60,14 +61,20 @@ export default function Home() {
     addMessage({ text, sender: 'user' });
 
     try {
-      const textAnalysis = await performTextAnalysis(text);
+      let translatedText = text;
+      if (language !== 'English') {
+        const translationResult = await performTranslation(text, language);
+        translatedText = translationResult.translatedText;
+      }
+
+      const textAnalysis = await performTextAnalysis(translatedText);
       setAnalysisResult(prev => ({ ...prev, text: textAnalysis.sentiment }));
 
       const combinedEmotion = textAnalysis.sentiment; 
 
       const responsePromise = getAdaptiveResponse({
         emotion: combinedEmotion,
-        userInput: text,
+        userInput: translatedText,
         pastConversations: history,
       });
 
@@ -131,15 +138,16 @@ export default function Home() {
           const base64Audio = reader.result as string;
           setIsThinking(true);
           try {
-            const result = await performVoiceAnalysis(base64Audio);
-            setAnalysisResult(prev => ({ ...prev, voice: result.emotion }));
-            const emotion = mapSentimentToEmotion(result.emotion);
+            const [voiceAnalysisResult, speechToTextResult] = await Promise.all([
+                performVoiceAnalysis(base64Audio),
+                performSpeechToText(base64Audio),
+            ]);
+
+            setAnalysisResult(prev => ({ ...prev, voice: voiceAnalysisResult.emotion }));
+            const emotion = mapSentimentToEmotion(voiceAnalysisResult.emotion);
             setCurrentEmotion(emotion);
             
-            // This is a simplified stand-in for a proper speech-to-text implementation.
-            // In a real application, you would use a speech-to-text API.
-            const voiceInput = "User spoke, but transcription is not implemented.";
-            await handleSendMessage(voiceInput);
+            await handleSendMessage(speechToTextResult.transcript);
             
           } catch(e) {
              toast({ variant: "destructive", title: "Voice Analysis Failed", description: "I couldn't understand the audio. Please try again." });
@@ -252,6 +260,8 @@ export default function Home() {
           isListening={isListening}
           isCapturingFace={isCapturingFace}
           onPlayAudio={handlePlayAudio}
+          language={language}
+          onLanguageChange={setLanguage}
         />
         <video ref={videoRef} autoPlay playsInline className="hidden" />
         <audio ref={audioRef} className="hidden" />
