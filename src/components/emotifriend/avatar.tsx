@@ -21,8 +21,8 @@ const emotionEmojis: Record<Exclude<Emotion, 'thinking' | 'listening' | 'neutral
 };
 
 const defaultAvatars: Record<Gender, {url: string, hint: string}> = {
-    female: { url: "https://placehold.co/192x192.png", hint: "woman portrait" },
-    male: { url: "https://placehold.co/192x192.png", hint: "man portrait" },
+    female: { url: "https://placehold.co/192x192.png", hint: "photorealistic woman" },
+    male: { url: "https://placehold.co/192x192.png", hint: "photorealistic man" },
 }
 
 export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUpload, gender }: AvatarProps) {

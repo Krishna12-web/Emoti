@@ -46,7 +46,7 @@ const generateAvatarFromPhotoFlow = ai.defineFlow(
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       prompt: [
         {
-          text: 'Generate a friendly, animated-style avatar based on the person in this photo. The avatar should have a neutral, pleasant expression and be suitable for a virtual companion. It should be a bust shot (head and shoulders) on a simple, neutral background.',
+          text: 'Generate a photorealistic avatar based on the person in this photo. The avatar should have a neutral, pleasant expression. It should be a bust shot (head and shoulders) on a simple, neutral background.',
         },
         {media: {url: photoDataUri}},
       ],
