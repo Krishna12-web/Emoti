@@ -33,12 +33,12 @@ export function Avatar({ emotion = 'neutral', avatarUrl, onAvatarUpload }: Avata
   return (
     <div className={cn("relative w-48 h-48 transition-transform duration-500", animationClass)}>
         <Image
-          src={avatarUrl || "https://placehold.co/200x200.png"}
+          src={avatarUrl || "https://placehold.co/192x192.png"}
           alt="EmotiFriend Avatar"
           width={192}
           height={192}
           className="rounded-full object-cover shadow-lg border-4 border-primary/50"
-          data-ai-hint={avatarUrl ? "" : "happy robot"}
+          data-ai-hint={avatarUrl ? "" : "man portrait"}
         />
         {emoji && (
           <div className="absolute bottom-0 right-0 text-4xl bg-background/50 rounded-full p-1">
