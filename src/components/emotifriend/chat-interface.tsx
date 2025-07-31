@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRef, useEffect } from 'react';
@@ -5,7 +6,7 @@ import type { Message } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, Mic, Video, Square, X, PlayCircle, Languages } from 'lucide-react';
+import { Send, Mic, Video, Square, X, PlayCircle, Languages, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -25,6 +26,7 @@ type ChatInterfaceProps = {
   onPlayAudio: (audioDataUri: string) => void;
   language: string;
   onLanguageChange: (language: string) => void;
+  onClearChat: () => void;
 };
 
 const MessageBubble = ({ msg, onPlayAudio }: { msg: Message, onPlayAudio: (audioDataUri: string) => void }) => {
@@ -67,6 +69,7 @@ export function ChatInterface({
   onPlayAudio,
   language,
   onLanguageChange,
+  onClearChat,
 }: ChatInterfaceProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -109,6 +112,16 @@ export function ChatInterface({
       </ScrollArea>
       <div className="p-4 bg-background/80 backdrop-blur-sm border-t border-border">
         <div className="relative flex items-center gap-2">
+           <Button
+              size="icon"
+              variant="ghost"
+              onClick={onClearChat}
+              disabled={isThinking}
+              className="text-primary hover:text-primary/80"
+              aria-label="Clear Chat"
+            >
+              <Trash2 size={20} />
+            </Button>
           <Textarea
             ref={textareaRef}
             placeholder={isListening ? "Listening..." : "Type your feelings here..."}

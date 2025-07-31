@@ -18,7 +18,7 @@ const defaultAvatars: Record<Gender, string> = {
 }
 
 export default function Home() {
-  const { messages, addMessage, history } = useConversation();
+  const { messages, addMessage, history, clearConversation } = useConversation();
   const [currentEmotion, setCurrentEmotion] = useState<Emotion>('neutral');
   const [isThinking, setIsThinking] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -259,6 +259,14 @@ export default function Home() {
     }
   };
 
+  const handleClearChat = () => {
+    clearConversation();
+    setCurrentEmotion('neutral');
+    setAnalysisResult({});
+    setVideoUrl(null);
+    toast({ title: "Chat cleared", description: "The conversation has been reset." });
+  };
+
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 overflow-hidden">
@@ -292,6 +300,7 @@ export default function Home() {
           onPlayAudio={handlePlayAudio}
           language={language}
           onLanguageChange={setLanguage}
+          onClearChat={handleClearChat}
         />
         <video ref={videoRef} autoPlay playsInline className="hidden" />
         <audio ref={audioRef} className="hidden" />

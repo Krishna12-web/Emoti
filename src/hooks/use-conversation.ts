@@ -1,9 +1,21 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Message } from '@/lib/types';
 
 const STORAGE_KEY = 'emotifriend-conversation';
+
+const getInitialMessages = (): Message[] => {
+  return [
+    {
+      id: 'welcome',
+      sender: 'ai',
+      text: 'Hello, I\'m EmotiFriend. How are you feeling today?',
+      timestamp: Date.now(),
+    },
+  ];
+};
 
 export function useConversation() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -15,27 +27,11 @@ export function useConversation() {
       if (stored) {
         setMessages(JSON.parse(stored));
       } else {
-        // Add a default welcome message if no history
-        setMessages([
-          {
-            id: 'welcome',
-            sender: 'ai',
-            text: 'Hello, I\'m EmotiFriend. How are you feeling today?',
-            timestamp: Date.now(),
-          },
-        ]);
+        setMessages(getInitialMessages());
       }
     } catch (error) {
       console.error("Failed to parse messages from localStorage", error);
-      // Handle potential JSON parsing errors
-      setMessages([
-          {
-            id: 'welcome_error',
-            sender: 'ai',
-            text: 'Hello, I\'m EmotiFriend. How are you feeling today?',
-            timestamp: Date.now(),
-          },
-        ]);
+      setMessages(getInitialMessages());
     }
     setIsInitialized(true);
   }, []);
@@ -59,7 +55,16 @@ export function useConversation() {
     setMessages((prev) => [...prev, newMessage]);
   }, []);
 
+  const clearConversation = useCallback(() => {
+    setMessages(getInitialMessages());
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error("Failed to clear messages from localStorage", error);
+    }
+  }, []);
+
   const history = messages.map(msg => `${msg.sender}: ${msg.text}`);
 
-  return { messages, addMessage, history };
+  return { messages, addMessage, history, clearConversation };
 }
