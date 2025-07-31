@@ -32,7 +32,7 @@ const MessageBubble = ({ msg }: { msg: Message }) => {
           "max-w-xs md:max-w-md lg:max-w-lg p-3 rounded-2xl shadow-md",
           isUser
             ? "bg-primary text-primary-foreground rounded-br-lg"
-            : "bg-white text-foreground rounded-bl-lg"
+            : "bg-card text-card-foreground rounded-bl-lg border"
         )}
       >
         <p className="text-base whitespace-pre-wrap">{msg.text}</p>
@@ -91,7 +91,7 @@ export function ChatInterface({
           <Textarea
             ref={textareaRef}
             placeholder="Type your feelings here..."
-            className="flex-grow pr-24 bg-white shadow-sm resize-none"
+            className="flex-grow pr-24 bg-input shadow-sm resize-none"
             rows={1}
             onKeyDown={handleKeyDown}
             disabled={isThinking || isListening || isCapturingFace}
