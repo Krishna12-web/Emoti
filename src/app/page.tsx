@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -17,6 +18,7 @@ export default function Home() {
   const [isListening, setIsListening] = useState(false);
   const [isCapturingFace, setIsCapturingFace] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult>({});
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -189,6 +191,18 @@ export default function Home() {
     }
   };
 
+  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 overflow-hidden">
       <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
@@ -198,7 +212,11 @@ export default function Home() {
         </header>
 
         <div className="flex-shrink-0 flex justify-center items-center py-6">
-          <Avatar emotion={isThinking ? 'thinking' : currentEmotion} />
+          <Avatar
+            emotion={isThinking ? 'thinking' : currentEmotion}
+            avatarUrl={avatarUrl}
+            onAvatarUpload={handleAvatarUpload}
+          />
         </div>
         
         <EmotionStatus result={analysisResult} />
