@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -28,7 +29,6 @@ export default function LoginPage() {
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const auth = getAuth(app);
 
   useEffect(() => {
     setIsClient(true);
@@ -36,7 +36,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isClient || window.recaptchaVerifier) return;
-
+    const auth = getAuth(app);
     window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
       'size': 'invisible',
       'callback': () => {
@@ -47,10 +47,11 @@ export default function LoginPage() {
     window.recaptchaVerifier.render().catch(err => {
       console.error("reCAPTCHA render error:", err);
     });
-  }, [isClient, auth]);
+  }, [isClient]);
   
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const auth = getAuth(app);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Logged in successfully!' });
@@ -62,6 +63,7 @@ export default function LoginPage() {
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    const auth = getAuth(app);
     const appVerifier = window.recaptchaVerifier;
     if (!appVerifier) {
         toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: 'Please wait a moment and try again.' });

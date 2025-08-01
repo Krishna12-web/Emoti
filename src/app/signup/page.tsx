@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -31,7 +32,6 @@ export default function SignupPage() {
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-  const auth = getAuth(app);
 
   useEffect(() => {
     setIsClient(true);
@@ -39,7 +39,7 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (!isClient || window.recaptchaVerifier) return;
-    
+    const auth = getAuth(app);
     window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
       'size': 'invisible',
       'callback': () => {
@@ -50,10 +50,11 @@ export default function SignupPage() {
     window.recaptchaVerifier.render().catch(err => {
       console.error("reCAPTCHA render error:", err);
     });
-  }, [isClient, auth]);
+  }, [isClient]);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    const auth = getAuth(app);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
@@ -66,6 +67,7 @@ export default function SignupPage() {
 
   const handlePhoneSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    const auth = getAuth(app);
     const appVerifier = window.recaptchaVerifier;
     if (!appVerifier) {
         toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: 'Please wait a moment and try again.' });
