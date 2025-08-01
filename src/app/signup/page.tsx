@@ -90,7 +90,9 @@ export default function SignupPage() {
         return;
     }
     try {
-      await confirmationResult.confirm(otp);
+      const userCredential = await confirmationResult.confirm(otp);
+      // You can update profile here as well if you collect name for phone signup
+      // await updateProfile(userCredential.user, { displayName: name });
       toast({ title: 'Account created and logged in successfully!' });
       router.push('/');
     } catch (error: any) {
