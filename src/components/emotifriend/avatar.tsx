@@ -1,7 +1,7 @@
 
 import { cn } from '@/lib/utils';
 import type { Emotion, Gender } from '@/lib/types';
-import { Bot, Upload } from 'lucide-react';
+import { Bot, Upload, Volume2, VolumeX } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,8 @@ type AvatarProps = {
   videoUrl?: string | null;
   onAvatarUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   gender: Gender;
+  isMuted: boolean;
+  onToggleMute: () => void;
 };
 
 const emotionEmojis: Record<Exclude<Emotion, 'thinking' | 'listening' | 'neutral'>, string> = {
@@ -25,7 +27,7 @@ const defaultAvatars: Record<Gender, {url: string, hint: string}> = {
     male: { url: "https://placehold.co/192x192.png", hint: "photorealistic man" },
 }
 
-export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUpload, gender }: AvatarProps) {
+export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUpload, gender, isMuted, onToggleMute }: AvatarProps) {
   const animationClass = emotion === 'listening' ? 'nod-animation' : 'breathing-animation';
   const emoji = (emotion && emotion !== 'neutral' && emotion !== 'thinking' && emotion !== 'listening') ? emotionEmojis[emotion] : null;
 
@@ -44,13 +46,14 @@ export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUploa
     <div className={cn("relative w-48 h-48 transition-transform duration-500", !videoUrl && animationClass)}>
         {videoUrl ? (
              <video
+                key={videoUrl}
                 src={videoUrl}
                 width={192}
                 height={192}
                 className="rounded-full object-cover shadow-lg border-4 border-primary/50"
                 autoPlay
                 loop
-                muted
+                muted={isMuted}
                 playsInline
              />
         ) : (
@@ -69,7 +72,13 @@ export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUploa
             {emoji}
           </div>
         )}
-        <div className="absolute top-0 right-0">
+        <div className="absolute top-0 right-0 flex items-center gap-1">
+            <Button asChild size="icon" variant="ghost" className="rounded-full bg-background/50 hover:bg-background/80 cursor-pointer" onClick={onToggleMute}>
+                <span>
+                    {isMuted ? <VolumeX className="w-5 h-5 text-primary" /> : <Volume2 className="w-5 h-5 text-primary" />}
+                    <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
+                </span>
+            </Button>
           <Label htmlFor="avatar-upload">
             <Button asChild size="icon" variant="ghost" className="rounded-full bg-background/50 hover:bg-background/80 cursor-pointer">
                 <span>

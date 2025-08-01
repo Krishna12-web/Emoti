@@ -28,6 +28,7 @@ export default function Home() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [language, setLanguage] = useState<string>("English");
   const [gender, setGender] = useState<Gender>('female');
+  const [isMuted, setIsMuted] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -53,6 +54,12 @@ export default function Home() {
       cleanupMedia();
     };
   }, [cleanupMedia]);
+  
+  useEffect(() => {
+    if (audioRef.current) {
+        audioRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
 
   const handlePlayAudio = (audioDataUri: string) => {
     if (audioRef.current) {
@@ -94,36 +101,34 @@ export default function Home() {
       
       const currentAvatar = avatarUrl || defaultAvatars[gender];
 
-      try {
-        const videoResponse = await generateTalkingVideo({
+        generateTalkingVideo({
             avatarDataUri: currentAvatar,
             text: response.response,
-        });
-        setVideoUrl(videoResponse.videoDataUri);
-      } catch (videoError) {
-        console.error("Video generation failed:", videoError);
-        toast({
-          variant: "destructive",
-          title: "Video Generation Failed",
-          description: "Could not generate video. Falling back to audio.",
-        });
-        
-        try {
-            const audioResponse = await getAudioResponse({ text: response.response, voice: gender });
-            handlePlayAudio(audioResponse.audioDataUri);
-            const lastMessage = messages[messages.length - 1];
-            if (lastMessage.sender === 'ai') {
-                addMessage({...lastMessage, audioDataUri: audioResponse.audioDataUri, id: `${Date.now()}`});
-            }
-        } catch (audioError) {
-            console.error("Audio generation failed:", audioError);
+        }).then(videoResponse => {
+            setVideoUrl(videoResponse.videoDataUri);
+        }).catch(videoError => {
+            console.error("Video generation failed:", videoError);
             toast({
-                variant: "destructive",
-                title: "Audio Generation Failed",
-                description: "Could not generate audio either.",
+              variant: "destructive",
+              title: "Video Generation Failed",
+              description: "Could not generate video. Falling back to audio.",
             });
-        }
-      }
+            
+            getAudioResponse({ text: response.response, voice: gender }).then(audioResponse => {
+                handlePlayAudio(audioResponse.audioDataUri);
+                const lastMessage = messages[messages.length - 1];
+                if (lastMessage?.sender === 'ai') {
+                    addMessage({...lastMessage, audioDataUri: audioResponse.audioDataUri, id: `${Date.now()}`});
+                }
+            }).catch(audioError => {
+                console.error("Audio generation failed:", audioError);
+                toast({
+                    variant: "destructive",
+                    title: "Audio Generation Failed",
+                    description: "Could not generate audio either.",
+                });
+            });
+        });
       
       const userEmotion = mapSentimentToEmotion(combinedEmotion);
       setCurrentEmotion(userEmotion);
@@ -334,6 +339,8 @@ export default function Home() {
             videoUrl={videoUrl}
             onAvatarUpload={handleAvatarUpload}
             gender={gender}
+            isMuted={isMuted}
+            onToggleMute={() => setIsMuted(prev => !prev)}
           />
         </div>
         
