@@ -126,7 +126,7 @@ export default function Home() {
           ));
       }).catch(audioError => {
           console.error("Audio generation failed:", audioError);
-          const errorMessage = (audioError as Error).message || "Could not generate audio for the response.";
+          const errorMessage = (audioError as Error).message || "";
           let errorDescription = "Could not generate audio for the response.";
           if (errorMessage.includes("429")) {
               errorDescription = "I've talked a lot today and my voice needs a rest. Audio is temporarily unavailable due to daily limits, but we can still chat!"
