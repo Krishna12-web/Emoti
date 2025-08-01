@@ -30,21 +30,22 @@ export default function SignupPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
-  const auth = getAuth(app);
   const router = useRouter();
+  const auth = getAuth(app);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    if (isClient && auth && !window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
-            'callback': (response: any) => {
-              // reCAPTCHA solved, allow signInWithPhoneNumber.
-            }
-          });
+    if (!isClient) return;
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+      });
     }
   }, [isClient, auth]);
 
@@ -61,18 +62,19 @@ export default function SignupPage() {
 
   const handlePhoneSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!window.recaptchaVerifier) {
+    const appVerifier = window.recaptchaVerifier;
+    if (!appVerifier) {
         toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: 'Please wait a moment and try again.' });
         return;
     }
     try {
-        const appVerifier = window.recaptchaVerifier;
         const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
         setConfirmationResult(result);
         setOtpSent(true);
         toast({ title: 'OTP Sent!', description: 'Please check your phone for the OTP.' });
       } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Failed to send OTP', description: error.message });
+        console.error("Phone Signup Error:", error);
+        toast({ variant: 'destructive', title: 'Failed to send OTP', description: "Something went wrong. Make sure your phone number is correct and includes the country code." });
       }
   };
 
@@ -125,7 +127,7 @@ export default function SignupPage() {
           Already have an account? <Link href="/login" className="text-primary hover:underline">Log In</Link>
         </p>
       </div>
-      {isClient && <div id="recaptcha-container"></div>}
+      <div id="recaptcha-container"></div>
        <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
         App Owner: Krishna Saini
       </footer>

@@ -28,18 +28,19 @@ export default function LoginPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
-  const auth = getAuth(app);
   const router = useRouter();
+  const auth = getAuth(app);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
 
   useEffect(() => {
-    if (isClient && auth && !window.recaptchaVerifier) {
+    if (!isClient) return;
+    if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
-        'callback': (response: any) => {
+        'callback': () => {
           // reCAPTCHA solved, allow signInWithPhoneNumber.
         }
       });
@@ -59,18 +60,19 @@ export default function LoginPage() {
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!window.recaptchaVerifier) {
+    const appVerifier = window.recaptchaVerifier;
+    if (!appVerifier) {
         toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: 'Please wait a moment and try again.' });
         return;
     }
     try {
-      const appVerifier = window.recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
       setConfirmationResult(result);
       setOtpSent(true);
       toast({ title: 'OTP Sent!', description: 'Please check your phone for the OTP.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Failed to send OTP', description: error.message });
+      console.error("Phone Signin Error:", error);
+      toast({ variant: 'destructive', title: 'Failed to send OTP', description: "Something went wrong. Make sure your phone number is correct and includes the country code." });
     }
   };
 
@@ -123,7 +125,7 @@ export default function LoginPage() {
           Don't have an account? <Link href="/signup" className="text-primary hover:underline">Sign Up</Link>
         </p>
       </div>
-      {isClient && <div id="recaptcha-container"></div>}
+      <div id="recaptcha-container"></div>
        <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
         App Owner: Krishna Saini
       </footer>
