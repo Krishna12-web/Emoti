@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { getAuth, signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { app } from '@/lib/firebase';
 
 // Extend the Window interface for reCAPTCHA
@@ -32,7 +31,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!window.recaptchaVerifier) {
+    if (auth && !window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': (response: any) => {
@@ -83,16 +82,7 @@ export default function LoginPage() {
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 relative">
-        <div className="absolute top-8 flex flex-col items-center">
-            <Image 
-                src="https://i.imgur.com/3flw6h1.png"
-                alt="EmotiFriend Logo"
-                width={150}
-                height={150}
-                data-ai-hint="logo E K"
-            />
-        </div>
-      <div className="w-full max-w-md mt-32">
+      <div className="w-full max-w-md">
         <h1 className="text-4xl font-headline text-center text-primary-foreground/80 mb-8">Welcome Back to EmotiFriend</h1>
         <Tabs defaultValue="email" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
