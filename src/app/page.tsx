@@ -90,34 +90,41 @@ export default function Home() {
       });
 
       const currentAvatar = avatarUrl || defaultAvatars[gender];
-
-      // Generate audio first for a quick response
-      const audioResponse = await getAudioResponse({ text: response.response, voice: gender });
-      const audioDataUri = audioResponse.audioDataUri;
-      handlePlayAudio(audioDataUri);
-
-      const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai', audioDataUri };
-      addMessage(aiMessage);
-      
-      const userEmotion = mapSentimentToEmotion(combinedEmotion);
-      setCurrentEmotion(userEmotion);
-      setIsThinking(false);
+      let audioPlayed = false;
 
       // Generate video in the background
-      try {
-        const videoResponse = await generateTalkingVideo({
-            avatarDataUri: currentAvatar,
-            text: response.response,
-        });
+      generateTalkingVideo({
+          avatarDataUri: currentAvatar,
+          text: response.response,
+      }).then(videoResponse => {
         setVideoUrl(videoResponse.videoDataUri);
-      } catch (videoError) {
+      }).catch(videoError => {
         console.error("Video generation failed:", videoError);
         toast({
           variant: "destructive",
           title: "Video Generation Failed",
-          description: "Could not generate video. This may be due to account billing status.",
+          description: "Could not generate video. Falling back to audio.",
         });
-      }
+        // Fallback to audio if video fails
+        if (!audioPlayed) {
+          getAudioResponse({ text: response.response, voice: gender }).then(audioResponse => {
+            handlePlayAudio(audioResponse.audioDataUri);
+            const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai', audioDataUri: audioResponse.audioDataUri };
+            addMessage(aiMessage);
+          });
+        }
+      });
+      
+      // Get audio response right away
+      const audioResponse = await getAudioResponse({ text: response.response, voice: gender });
+      handlePlayAudio(audioResponse.audioDataUri);
+      audioPlayed = true;
+
+      const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai', audioDataUri: audioResponse.audioDataUri };
+      addMessage(aiMessage);
+      
+      const userEmotion = mapSentimentToEmotion(combinedEmotion);
+      setCurrentEmotion(userEmotion);
 
     } catch (error) {
       console.error('Error generating response:', error);
@@ -127,7 +134,8 @@ export default function Home() {
         description: "I'm having trouble thinking right now. Please try again later.",
       });
       setCurrentEmotion('sad');
-      setIsThinking(false); // Make sure to reset thinking state on error
+    } finally {
+        setIsThinking(false);
     }
   };
   
@@ -173,7 +181,15 @@ export default function Home() {
                 performSpeechToText(base64Audio),
             ]);
 
-            setAnalysisResult(prev => ({ ...prev, voice: voiceAnalysisResult.emotion }));
+            setAnalysisResult(prev => ({ 
+                ...prev, 
+                voice: {
+                    emotion: voiceAnalysisResult.emotion,
+                    pitch: voiceAnalysisResult.pitch,
+                    tone: voiceAnalysisResult.tone,
+                    rhythm: voiceAnalysisResult.rhythm,
+                } 
+            }));
             const emotion = mapSentimentToEmotion(voiceAnalysisResult.emotion);
             setCurrentEmotion(emotion);
             

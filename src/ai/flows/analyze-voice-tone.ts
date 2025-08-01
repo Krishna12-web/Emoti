@@ -16,7 +16,7 @@ const AnalyzeVoiceToneInputSchema = z.object({
   audioDataUri: z
     .string()
     .describe(
-      "A data URI containing the audio data to analyze. It must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+      "A data URI containing the audio data to analyze. It must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'"
     ),
 });
 export type AnalyzeVoiceToneInput = z.infer<typeof AnalyzeVoiceToneInputSchema>;
@@ -32,6 +32,9 @@ const AnalyzeVoiceToneOutputSchema = z.object({
     .describe(
       'A numerical value representing the confidence level of the emotion detection.'
     ),
+    pitch: z.string().describe('Analysis of the voice pitch (e.g., high, low, varied).'),
+    tone: z.string().describe('Description of the voice tone (e.g., warm, sharp, trembling).'),
+    rhythm: z.string().describe('Analysis of the speech rhythm (e.g., fast, slow, hesitant).'),
 });
 export type AnalyzeVoiceToneOutput = z.infer<typeof AnalyzeVoiceToneOutputSchema>;
 
@@ -43,12 +46,14 @@ const analyzeVoiceTonePrompt = ai.definePrompt({
   name: 'analyzeVoiceTonePrompt',
   input: {schema: AnalyzeVoiceToneInputSchema},
   output: {schema: AnalyzeVoiceToneOutputSchema},
-  prompt: `Analyze the emotion in the following audio data.  The audio data is represented by the following data URI: {{media url=audioDataUri}}.
+  prompt: `Analyze the emotion, pitch, tone, and rhythm in the following audio data. The audio data is represented by the following data URI: {{media url=audioDataUri}}.
 
-  Determine the predominant emotion expressed in the audio (e.g., sadness, happiness, anger). Also, estimate your confidence in the emotion you detected.
+  Determine the predominant emotion expressed in the audio (e.g., sadness, happiness, anger).
+  Describe the pitch (e.g., high, low, varied), tone (e.g., warm, sharp, trembling), and rhythm (e.g., fast, slow, hesitant).
+  Also, estimate your confidence in the emotion you detected.
 
-  Output in JSON format.
-  `, // Ensure correct Handlebars syntax
+  Output in JSON format as specified by the schema.
+  `,
 });
 
 const analyzeVoiceToneFlow = ai.defineFlow(
@@ -62,4 +67,3 @@ const analyzeVoiceToneFlow = ai.defineFlow(
     return output!;
   }
 );
-

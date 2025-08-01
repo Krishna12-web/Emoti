@@ -10,7 +10,12 @@ export type Emotion = 'neutral' | 'happy' | 'sad' | 'angry' | 'listening' | 'thi
 
 export type AnalysisResult = {
   text?: string;
-  voice?: string;
+  voice?: {
+    emotion: string;
+    pitch?: string;
+    tone?: string;
+    rhythm?: string;
+  };
   face?: string;
 };
 
