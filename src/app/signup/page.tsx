@@ -6,27 +6,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, createUserWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+
+
+// Extend the Window interface for reCAPTCHA
+declare global {
+    interface Window {
+        recaptchaVerifier?: RecaptchaVerifier;
+        confirmationResult?: ConfirmationResult;
+    }
+}
+
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<any>(null);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const { toast } = useToast();
   const auth = getAuth();
   const router = useRouter();
 
-  // This is a global object for reCAPTCHA
-  if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
-    (window as any).recaptchaVerifier = null;
-  }
-  
   const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
@@ -36,6 +41,7 @@ export default function SignupPage() {
             }
           });
     }
+    return window.recaptchaVerifier;
   };
 
   const handleEmailSignup = async (e: React.FormEvent) => {
@@ -52,8 +58,7 @@ export default function SignupPage() {
   const handlePhoneSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        setupRecaptcha();
-        const appVerifier = window.recaptchaVerifier;
+        const appVerifier = setupRecaptcha();
         const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
         setConfirmationResult(result);
         setOtpSent(true);
@@ -65,6 +70,10 @@ export default function SignupPage() {
 
   const handleOtpVerify = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!confirmationResult) {
+        toast({ variant: 'destructive', title: 'Verification failed', description: 'Please try sending the OTP again.' });
+        return;
+    }
     try {
       await confirmationResult.confirm(otp);
       toast({ title: 'Account created and logged in successfully!' });
@@ -123,12 +132,4 @@ export default function SignupPage() {
       </footer>
     </main>
   );
-}
-
-// Extend the Window interface
-declare global {
-    interface Window {
-        recaptchaVerifier: any;
-        confirmationResult: any;
-    }
 }
