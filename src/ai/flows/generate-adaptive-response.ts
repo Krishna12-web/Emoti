@@ -104,7 +104,7 @@ const generateAdaptiveResponseFlow = ai.defineFlow(
   },
   async input => {
     const response = await prompt(input);
-    const toolCalls = response.toolCalls();
+    const toolCalls = response.toolCalls;
 
     return {
         response: response.text!,
