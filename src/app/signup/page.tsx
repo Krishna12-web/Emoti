@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { getAuth, createUserWithEmailAndPassword, RecaptchaVerifier, signInWithP
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { app } from '@/lib/firebase';
 
 
 // Extend the Window interface for reCAPTCHA
@@ -29,10 +30,10 @@ export default function SignupPage() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const { toast } = useToast();
-  const auth = getAuth();
+  const auth = getAuth(app);
   const router = useRouter();
 
-  const setupRecaptcha = () => {
+  useEffect(() => {
     if (!window.recaptchaVerifier) {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             'size': 'invisible',
@@ -41,8 +42,7 @@ export default function SignupPage() {
             }
           });
     }
-    return window.recaptchaVerifier;
-  };
+  }, [auth]);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +58,7 @@ export default function SignupPage() {
   const handlePhoneSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-        const appVerifier = setupRecaptcha();
+        const appVerifier = window.recaptchaVerifier!;
         const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
         setConfirmationResult(result);
         setOtpSent(true);

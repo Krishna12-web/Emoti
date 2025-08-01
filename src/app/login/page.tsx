@@ -10,6 +10,7 @@ import { getAuth, signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhone
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { app } from '@/lib/firebase';
 
 // Extend the Window interface for reCAPTCHA
 declare global {
@@ -27,10 +28,10 @@ export default function LoginPage() {
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const { toast } = useToast();
-  const auth = getAuth();
+  const auth = getAuth(app);
   const router = useRouter();
 
-  const setupRecaptcha = () => {
+  useEffect(() => {
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
@@ -39,8 +40,7 @@ export default function LoginPage() {
         }
       });
     }
-    return window.recaptchaVerifier;
-  };
+  }, [auth]);
   
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +56,7 @@ export default function LoginPage() {
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const appVerifier = setupRecaptcha();
+      const appVerifier = window.recaptchaVerifier!;
       const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
       setConfirmationResult(result);
       setOtpSent(true);
