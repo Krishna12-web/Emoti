@@ -33,24 +33,6 @@ export default function LoginPage() {
   useEffect(() => {
     setIsClient(true);
   }, []);
-
-  useEffect(() => {
-    if (!isClient) return;
-    
-    if (!window.recaptchaVerifier) {
-      const auth = getAuth(app);
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
-      });
-      // Render the reCAPTCHA widget
-      window.recaptchaVerifier.render().catch(err => {
-        console.error("reCAPTCHA render error:", err);
-      });
-    }
-  }, [isClient]);
   
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,14 +46,24 @@ export default function LoginPage() {
     }
   };
 
+  const setupRecaptcha = () => {
+    const auth = getAuth(app);
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          // reCAPTCHA solved
+        }
+      });
+      window.recaptchaVerifier.render();
+    }
+  };
+
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setupRecaptcha(); 
     const auth = getAuth(app);
-    const appVerifier = window.recaptchaVerifier;
-    if (!appVerifier) {
-        toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: 'Please wait a moment and try again.' });
-        return;
-    }
+    const appVerifier = window.recaptchaVerifier!;
     try {
       const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
       setConfirmationResult(result);
@@ -128,7 +120,7 @@ export default function LoginPage() {
                     <Button type="submit" className="w-full">Verify OTP & Login</Button>
                   </form>
                 )}
-                <div id="recaptcha-container"></div>
+                <div id="recaptcha-container" className="mt-4"></div>
               </>
             )}
           </TabsContent>

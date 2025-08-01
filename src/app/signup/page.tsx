@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { app } from '@/lib/firebase';
 
-
 // Extend the Window interface for reCAPTCHA
 declare global {
     interface Window {
@@ -19,7 +18,6 @@ declare global {
         confirmationResult?: ConfirmationResult;
     }
 }
-
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -37,24 +35,6 @@ export default function SignupPage() {
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (!isClient) return;
-
-    if (!window.recaptchaVerifier) {
-      const auth = getAuth(app);
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
-      });
-       // Render the reCAPTCHA widget
-       window.recaptchaVerifier.render().catch(err => {
-        console.error("reCAPTCHA render error:", err);
-      });
-    }
-  }, [isClient]);
-
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     const auth = getAuth(app);
@@ -63,19 +43,30 @@ export default function SignupPage() {
       await updateProfile(userCredential.user, { displayName: name });
       toast({ title: 'Account created successfully!' });
       router.push('/');
-    } catch (error: any) {
+    } catch (error: any)      {
       toast({ variant: 'destructive', title: 'Signup Failed', description: error.message });
+    }
+  };
+
+  const setupRecaptcha = () => {
+    const auth = getAuth(app);
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+            // reCAPTCHA solved
+        },
+      });
+      window.recaptchaVerifier.render();
     }
   };
 
   const handlePhoneSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setupRecaptcha();
     const auth = getAuth(app);
-    const appVerifier = window.recaptchaVerifier;
-    if (!appVerifier) {
-        toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: 'Please wait a moment and try again.' });
-        return;
-    }
+    const appVerifier = window.recaptchaVerifier!;
+    
     try {
         const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
         setConfirmationResult(result);
@@ -95,7 +86,6 @@ export default function SignupPage() {
     }
     try {
       const userCredential = await confirmationResult.confirm(otp);
-      // You can update profile here as well if you collect name for phone signup
       if (name) {
           await updateProfile(userCredential.user, { displayName: name });
       }
@@ -138,7 +128,7 @@ export default function SignupPage() {
                     <Button type="submit" className="w-full">Verify OTP & Sign Up</Button>
                   </form>
                 )}
-                <div id="recaptcha-container"></div>
+                <div id="recaptcha-container" className="mt-4"></div>
               </>
             )}
           </TabsContent>
