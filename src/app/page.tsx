@@ -427,7 +427,7 @@ toast({ title: "Avatar updated!", description: "Your new avatar is ready."});
       <header className="w-full py-4 flex justify-between items-center">
             <div>
                 <h1 className="text-4xl font-headline text-center text-primary-foreground/80">EmotiFriend</h1>
-                <p className="text-sm text-muted-foreground">Welcome, {user.email || user.phoneNumber}</p>
+                <p className="text-sm text-muted-foreground">Welcome, {user.displayName || user.email || user.phoneNumber}</p>
             </div>
             <Button onClick={handleSignOut} variant="ghost" size="icon">
                 <LogOut className="h-5 w-5" />
