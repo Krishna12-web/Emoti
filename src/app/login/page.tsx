@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -89,7 +88,7 @@ export default function LoginPage() {
       await confirmationResult.confirm(otp);
       toast({ title: 'Logged in successfully!' });
       router.push('/');
-    } catch (error: any) {
+    } catch (error: any) => {
       toast({ variant: 'destructive', title: 'Invalid OTP', description: error.message });
     }
   };
