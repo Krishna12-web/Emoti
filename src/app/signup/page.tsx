@@ -59,13 +59,13 @@ export default function SignupPage() {
       });
       window.recaptchaVerifier.render();
     }
+    return window.recaptchaVerifier;
   };
 
   const handlePhoneSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setupRecaptcha();
+    const appVerifier = setupRecaptcha();
     const auth = getAuth(app);
-    const appVerifier = window.recaptchaVerifier!;
     
     try {
         const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);

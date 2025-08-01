@@ -57,13 +57,13 @@ export default function LoginPage() {
       });
       window.recaptchaVerifier.render();
     }
+    return window.recaptchaVerifier;
   };
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setupRecaptcha(); 
+    const appVerifier = setupRecaptcha(); 
     const auth = getAuth(app);
-    const appVerifier = window.recaptchaVerifier!;
     try {
       const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
       setConfirmationResult(result);
