@@ -68,6 +68,19 @@ export default function Home() {
     }
   };
 
+  const handleToolCalls = (toolCalls: any[]) => {
+    for (const call of toolCalls) {
+        const { name, input } = call.toolRequest;
+        if (name === 'changeLanguage') {
+            setLanguage(input.language);
+            toast({ title: "Language Updated", description: `Switched to ${input.language}.` });
+        } else if (name === 'changeVoiceGender') {
+            setGender(input.gender);
+            toast({ title: "Voice Updated", description: `Switched to ${input.gender} voice.` });
+        }
+    }
+  }
+
   const handleSendMessage = async (text: string) => {
     if (isThinking) return;
 
@@ -95,6 +108,10 @@ export default function Home() {
         userInput: translatedText,
         pastConversations: history,
       });
+
+      if (response.toolCalls) {
+        handleToolCalls(response.toolCalls);
+      }
       
       const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai' };
       addMessage(aiMessage);
