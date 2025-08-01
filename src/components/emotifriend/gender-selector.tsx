@@ -9,15 +9,17 @@ import { User, Users } from 'lucide-react';
 type GenderSelectorProps = {
   gender: Gender;
   onGenderChange: (gender: Gender) => void;
+  disabled?: boolean;
 };
 
-export function GenderSelector({ gender, onGenderChange }: GenderSelectorProps) {
+export function GenderSelector({ gender, onGenderChange, disabled }: GenderSelectorProps) {
   return (
     <div className="flex justify-center items-center gap-2 mt-4">
       <Button 
         variant={gender === 'female' ? "secondary" : "ghost"}
         onClick={() => onGenderChange('female')}
         className={cn("rounded-full", gender === 'female' && "ring-2 ring-primary")}
+        disabled={disabled}
       >
         <User className="mr-2 h-4 w-4"/>
         Female
@@ -26,6 +28,7 @@ export function GenderSelector({ gender, onGenderChange }: GenderSelectorProps) 
         variant={gender === 'male' ? "secondary" : "ghost"}
         onClick={() => onGenderChange('male')}
         className={cn("rounded-full", gender === 'male' && "ring-2 ring-primary")}
+        disabled={disabled}
       >
         <User className="mr-2 h-4 w-4"/>
         Male
@@ -33,3 +36,5 @@ export function GenderSelector({ gender, onGenderChange }: GenderSelectorProps) 
     </div>
   );
 }
+
+    

@@ -62,7 +62,7 @@ export default function Home() {
   }, [isMuted]);
 
   const handlePlayAudio = (audioDataUri: string) => {
-    if (audioRef.current) {
+    if (audioRef.current && !isMuted) {
       audioRef.current.src = audioDataUri;
       audioRef.current.play().catch(e => console.error("Audio playback failed", e));
     }
@@ -115,58 +115,72 @@ export default function Home() {
       
       const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai' };
       addMessage(aiMessage);
-
-      // Immediately play audio
-      getAudioResponse({ text: response.response, voice: gender }).then(audioResponse => {
-          handlePlayAudio(audioResponse.audioDataUri);
-          setMessages(currentMessages => currentMessages.map(msg => 
-              (msg.text === response.response && msg.sender === 'ai' && !msg.audioDataUri) 
-              ? {...msg, audioDataUri: audioResponse.audioDataUri} 
-              : msg
-          ));
-      }).catch(audioError => {
-          console.error("Audio generation failed:", audioError);
-          const errorMessage = (audioError as Error).message || "";
-          let errorDescription = "Could not generate audio for the response.";
-          if (errorMessage.includes("429")) {
-              errorDescription = "I've talked a lot today and my voice needs a rest. Audio is temporarily unavailable due to daily limits, but we can still chat!"
-          }
-          toast({
-              variant: "destructive",
-              title: "Audio Generation Failed",
-              description: errorDescription,
-          });
-      });
-      
-      const currentAvatar = avatarUrl || defaultAvatars[gender];
-
-      // Generate video in the background
-      generateTalkingVideo({
-          avatarDataUri: currentAvatar,
-          text: response.response,
-      }).then(videoResponse => {
-          setVideoUrl(videoResponse.videoDataUri);
-      }).catch(videoError => {
-        const errorMessage = (videoError as Error).message || "Could not generate video.";
-          console.error("Video generation failed:", videoError);
-          if (!errorMessage.includes('billing')) {
-            toast({
-              variant: "destructive",
-              title: "Video Generation Failed",
-              description: "Could not generate video. Playing audio instead.",
-            });
-          }
-      });
-      
       const userEmotion = mapSentimentToEmotion(combinedEmotion);
       setCurrentEmotion(userEmotion);
+
+      // Reset thinking state after core response is received
+      setIsThinking(false);
+
+      // Fork audio and video generation to run in the background
+      // without blocking the UI.
+      (async () => {
+        const currentAvatar = avatarUrl || defaultAvatars[gender];
+
+        const audioPromise = getAudioResponse({ text: response.response, voice: gender }).catch(error => {
+            console.error("Audio generation failed:", error);
+            const errorMessage = (error as Error).message || "";
+            if (errorMessage.includes("429")) {
+                toast({
+                    variant: "destructive",
+                    title: "Audio Limit Reached",
+                    description: "My voice needs a rest for today. We can still chat, but audio is unavailable.",
+                });
+            }
+            return null; // Return null on failure
+        });
+        
+        const videoPromise = generateTalkingVideo({ avatarDataUri: currentAvatar, text: response.response }).catch(error => {
+            console.error("Video generation failed:", error);
+             const errorMessage = (error as Error).message || "";
+            if (errorMessage.includes("429")) {
+                 toast({
+                    variant: "destructive",
+                    title: "Video Limit Reached",
+                    description: "I've been on camera too much today! Video is unavailable, but we can still chat.",
+                });
+            } else if (!errorMessage.includes('billing')) {
+              toast({
+                variant: "destructive",
+                title: "Video Generation Failed",
+                description: "I'm having a bit of camera trouble right now.",
+              });
+            }
+            return null; // Return null on failure
+        });
+
+        const [audioResult, videoResult] = await Promise.all([audioPromise, videoPromise]);
+        
+        if (audioResult) {
+            handlePlayAudio(audioResult.audioDataUri);
+            setMessages(currentMessages => currentMessages.map(msg => 
+                (msg.text === response.response && msg.sender === 'ai' && !msg.audioDataUri) 
+                ? {...msg, audioDataUri: audioResult.audioDataUri} 
+                : msg
+            ));
+        }
+
+        if (videoResult) {
+            setVideoUrl(videoResult.videoDataUri);
+        }
+      })();
+
 
     } catch (error) {
       console.error('Error generating response:', error);
       const errorMessage = (error as Error).message || "";
       let errorDescription = "I'm having trouble thinking right now. Please try again later.";
       if (errorMessage.includes("429")) {
-          errorDescription = "I've talked a lot today and my voice needs a rest. Audio is temporarily unavailable due to daily limits, but we can still chat!"
+          errorDescription = "I seem to have hit my daily chat limit. Please try again tomorrow!"
       }
       toast({
         variant: "destructive",
@@ -174,8 +188,7 @@ export default function Home() {
         description: errorDescription,
       });
       setCurrentEmotion('sad');
-    } finally {
-        setIsThinking(false);
+      setIsThinking(false);
     }
   };
   
@@ -189,6 +202,7 @@ export default function Home() {
 
   const processAudioForAnalysis = async (base64Audio: string) => {
     setIsThinking(true);
+    setCurrentEmotion('thinking');
     try {
         const [voiceAnalysisResult, speechToTextResult] = await Promise.all([
             performVoiceAnalysis(base64Audio),
@@ -207,6 +221,7 @@ export default function Home() {
         const emotion = mapSentimentToEmotion(voiceAnalysisResult.emotion);
         setCurrentEmotion(emotion);
         
+        // This will handle the rest of the flow, including setting isThinking to false
         await handleSendMessage(speechToTextResult.transcript);
         
     } catch(e) {
@@ -252,6 +267,7 @@ export default function Home() {
       setTimeout(() => {
         if (recorder.state === 'recording') {
           recorder.stop();
+          cleanupMedia();
         }
       }, 5000); // Record for 5 seconds
 
@@ -272,6 +288,8 @@ export default function Home() {
       };
       reader.readAsDataURL(file);
     }
+    // Reset file input to allow uploading the same file again
+    event.target.value = '';
   };
 
   const handleFacialAnalysis = async () => {
@@ -298,8 +316,12 @@ export default function Home() {
   };
 
   const captureAndAnalyze = async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !streamRef.current) {
+      cleanupMedia();
+      return;
+    };
     setIsThinking(true);
+    setCurrentEmotion('thinking');
 
     const canvas = document.createElement('canvas');
     canvas.width = videoRef.current.videoWidth;
@@ -308,6 +330,9 @@ export default function Home() {
     context?.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
     const photoDataUri = canvas.toDataURL('image/jpeg');
     
+    // Stop camera track after capturing image
+    cleanupMedia();
+
     try {
       const result = await performFacialAnalysis(photoDataUri);
       setAnalysisResult(prev => ({ ...prev, face: result.emotionalState }));
@@ -322,7 +347,6 @@ export default function Home() {
       setCurrentEmotion('sad');
     } finally {
       setIsThinking(false);
-      cleanupMedia();
     }
   };
 
@@ -355,13 +379,15 @@ export default function Home() {
         } catch (error) {
           console.error("Avatar generation or analysis failed:", error);
           toast({ variant: "destructive", title: "Oops!", description: "I couldn't create an avatar or analyze the image. Please try another one." });
+          setCurrentEmotion('sad');
         } finally {
           setIsThinking(false);
-          setCurrentEmotion('neutral');
         }
       };
       reader.readAsDataURL(file);
     }
+    // Reset file input
+    event.target.value = '';
   };
 
   const handleClearChat = () => {
@@ -379,7 +405,7 @@ export default function Home() {
         <header className="w-full py-4">
           <h1 className="text-4xl font-headline text-center text-primary-foreground/80">EmotiFriend</h1>
           <SupportLinks />
-          <GenderSelector gender={gender} onGenderChange={setGender} />
+          <GenderSelector gender={gender} onGenderChange={setGender} disabled={isThinking}/>
         </header>
 
         <div className="flex-shrink-0 flex justify-center items-center py-6">
@@ -391,6 +417,7 @@ export default function Home() {
             gender={gender}
             isMuted={isMuted}
             onToggleMute={() => setIsMuted(prev => !prev)}
+            isThinking={isThinking}
           />
         </div>
         
@@ -410,7 +437,7 @@ export default function Home() {
           onLanguageChange={setLanguage}
           onClearChat={handleClearChat}
         />
-        <video ref={videoRef} autoPlay playsInline className="hidden" />
+        <video ref={videoRef} autoPlay playsInline muted className="hidden" />
         <audio ref={audioRef} className="hidden" />
       </div>
     </main>

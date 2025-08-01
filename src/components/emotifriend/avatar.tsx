@@ -14,6 +14,7 @@ type AvatarProps = {
   gender: Gender;
   isMuted: boolean;
   onToggleMute: () => void;
+  isThinking: boolean;
 };
 
 const emotionEmojis: Record<Exclude<Emotion, 'thinking' | 'listening' | 'neutral'>, string> = {
@@ -27,7 +28,7 @@ const defaultAvatars: Record<Gender, {url: string, hint: string}> = {
     male: { url: "https://placehold.co/192x192.png", hint: "photorealistic man" },
 }
 
-export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUpload, gender, isMuted, onToggleMute }: AvatarProps) {
+export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUpload, gender, isMuted, onToggleMute, isThinking }: AvatarProps) {
   const animationClass = emotion === 'listening' ? 'nod-animation' : 'breathing-animation';
   const emoji = (emotion && emotion !== 'neutral' && emotion !== 'thinking' && emotion !== 'listening') ? emotionEmojis[emotion] : null;
 
@@ -79,16 +80,18 @@ export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUploa
                     <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
                 </span>
             </Button>
-          <Label htmlFor="avatar-upload">
-            <Button asChild size="icon" variant="ghost" className="rounded-full bg-background/50 hover:bg-background/80 cursor-pointer">
+          <Label htmlFor="avatar-upload" className={cn(isThinking && "opacity-50 cursor-not-allowed")}>
+            <Button asChild size="icon" variant="ghost" disabled={isThinking} className="rounded-full bg-background/50 hover:bg-background/80 cursor-pointer">
                 <span>
                     <Upload className="w-5 h-5 text-primary" />
                     <span className="sr-only">Upload Avatar</span>
                 </span>
             </Button>
           </Label>
-          <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={onAvatarUpload} />
+          <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={onAvatarUpload} disabled={isThinking}/>
         </div>
     </div>
   );
 }
+
+    
