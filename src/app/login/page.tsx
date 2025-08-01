@@ -37,12 +37,17 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isClient) return;
+
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
           // reCAPTCHA solved, allow signInWithPhoneNumber.
         }
+      });
+      // Render the reCAPTCHA widget
+      window.recaptchaVerifier.render().catch(err => {
+        console.error("reCAPTCHA render error:", err);
       });
     }
   }, [isClient, auth]);
@@ -108,16 +113,20 @@ export default function LoginPage() {
             </form>
           </TabsContent>
           <TabsContent value="phone">
-            {!otpSent ? (
-              <form onSubmit={handlePhoneLogin} className="space-y-4 mt-4">
-                <Input type="tel" placeholder="Phone Number with country code" value={phone} onChange={(e) => setPhone(e.target.value)} required className="bg-input" />
-                <Button type="submit" className="w-full">Send OTP</Button>
-              </form>
-            ) : (
-              <form onSubmit={handleOtpVerify} className="space-y-4 mt-4">
-                <Input type="text" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)} required className="bg-input" />
-                <Button type="submit" className="w-full">Verify OTP & Login</Button>
-              </form>
+            {isClient && (
+              <>
+                {!otpSent ? (
+                  <form onSubmit={handlePhoneLogin} className="space-y-4 mt-4">
+                    <Input type="tel" placeholder="Phone Number with country code" value={phone} onChange={(e) => setPhone(e.target.value)} required className="bg-input" />
+                    <Button type="submit" className="w-full">Send OTP</Button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleOtpVerify} className="space-y-4 mt-4">
+                    <Input type="text" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)} required className="bg-input" />
+                    <Button type="submit" className="w-full">Verify OTP & Login</Button>
+                  </form>
+                )}
+              </>
             )}
           </TabsContent>
         </Tabs>
