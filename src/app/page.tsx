@@ -147,7 +147,36 @@ export default function Home() {
     return 'neutral';
   }
 
-  const handleVoiceAnalysis = async () => {
+  const processAudioForAnalysis = async (base64Audio: string) => {
+    setIsThinking(true);
+    try {
+        const [voiceAnalysisResult, speechToTextResult] = await Promise.all([
+            performVoiceAnalysis(base64Audio),
+            performSpeechToText(base64Audio),
+        ]);
+
+        setAnalysisResult(prev => ({ 
+            ...prev, 
+            voice: {
+                emotion: voiceAnalysisResult.emotion,
+                pitch: voiceAnalysisResult.pitch,
+                tone: voiceAnalysisResult.tone,
+                rhythm: voiceAnalysisResult.rhythm,
+            } 
+        }));
+        const emotion = mapSentimentToEmotion(voiceAnalysisResult.emotion);
+        setCurrentEmotion(emotion);
+        
+        await handleSendMessage(speechToTextResult.transcript);
+        
+    } catch(e) {
+        toast({ variant: "destructive", title: "Voice Analysis Failed", description: "I couldn't understand the audio. Please try again." });
+        setCurrentEmotion('sad');
+        setIsThinking(false);
+    }
+  }
+
+  const handleVoiceRecording = async () => {
     if (isListening) {
       mediaRecorderRef.current?.stop();
       cleanupMedia();
@@ -174,32 +203,7 @@ export default function Home() {
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
           const base64Audio = reader.result as string;
-          setIsThinking(true);
-          try {
-            const [voiceAnalysisResult, speechToTextResult] = await Promise.all([
-                performVoiceAnalysis(base64Audio),
-                performSpeechToText(base64Audio),
-            ]);
-
-            setAnalysisResult(prev => ({ 
-                ...prev, 
-                voice: {
-                    emotion: voiceAnalysisResult.emotion,
-                    pitch: voiceAnalysisResult.pitch,
-                    tone: voiceAnalysisResult.tone,
-                    rhythm: voiceAnalysisResult.rhythm,
-                } 
-            }));
-            const emotion = mapSentimentToEmotion(voiceAnalysisResult.emotion);
-            setCurrentEmotion(emotion);
-            
-            await handleSendMessage(speechToTextResult.transcript);
-            
-          } catch(e) {
-             toast({ variant: "destructive", title: "Voice Analysis Failed", description: "I couldn't understand the audio. Please try again." });
-             setCurrentEmotion('sad');
-             setIsThinking(false);
-          }
+          await processAudioForAnalysis(base64Audio);
         };
       };
 
@@ -215,6 +219,18 @@ export default function Home() {
       console.error('Error accessing microphone:', error);
       toast({ variant: "destructive", title: "Microphone Access Denied", description: "Please allow microphone access in your browser settings." });
       cleanupMedia();
+    }
+  };
+
+  const handleVoiceFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Audio = reader.result as string;
+        await processAudioForAnalysis(base64Audio);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -325,7 +341,8 @@ export default function Home() {
           messages={messages}
           onSendMessage={handleSendMessage}
           isThinking={isThinking}
-          onVoiceAnalysis={handleVoiceAnalysis}
+          onVoiceRecording={handleVoiceRecording}
+          onVoiceFileUpload={handleVoiceFileUpload}
           onFacialAnalysis={handleFacialAnalysis}
           isListening={isListening}
           isCapturingFace={isCapturingFace}

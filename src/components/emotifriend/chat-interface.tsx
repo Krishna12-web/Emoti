@@ -6,8 +6,9 @@ import type { Message } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Send, Mic, Video, Square, X, PlayCircle, Languages, Trash2 } from 'lucide-react';
+import { Send, Mic, Video, Square, X, PlayCircle, Languages, Trash2, FileAudio } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,7 +20,8 @@ type ChatInterfaceProps = {
   messages: Message[];
   onSendMessage: (text: string) => void;
   isThinking: boolean;
-  onVoiceAnalysis: () => void;
+  onVoiceRecording: () => void;
+  onVoiceFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onFacialAnalysis: () => void;
   isListening: boolean;
   isCapturingFace: boolean;
@@ -62,7 +64,8 @@ export function ChatInterface({
   messages,
   onSendMessage,
   isThinking,
-  onVoiceAnalysis,
+  onVoiceRecording,
+  onVoiceFileUpload,
   onFacialAnalysis,
   isListening,
   isCapturingFace,
@@ -135,13 +138,28 @@ export function ChatInterface({
              <Button
                 size="icon"
                 variant="ghost"
-                onClick={onVoiceAnalysis}
+                onClick={onVoiceRecording}
                 disabled={isThinking || isCapturingFace}
                 className={cn("text-primary hover:text-primary/80", isListening && "text-destructive animate-pulse")}
-                aria-label={isListening ? "Stop voice analysis" : "Start voice analysis"}
+                aria-label={isListening ? "Stop voice recording" : "Start voice recording"}
               >
                 {isListening ? <Square size={20} /> : <Mic size={20} />}
               </Button>
+              <Label htmlFor="voice-upload" className={cn(isInputDisabled && "opacity-50 cursor-not-allowed")}>
+                <Button
+                    asChild
+                    size="icon"
+                    variant="ghost"
+                    disabled={isInputDisabled}
+                    className="text-primary hover:text-primary/80"
+                    aria-label="Upload voice file"
+                >
+                    <span>
+                        <FileAudio size={20} />
+                    </span>
+                </Button>
+              </Label>
+              <input id="voice-upload" type="file" accept="audio/*" className="hidden" onChange={onVoiceFileUpload} disabled={isInputDisabled} />
               <Button
                 size="icon"
                 variant="ghost"
