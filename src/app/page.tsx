@@ -122,55 +122,52 @@ export default function Home() {
       setIsThinking(false);
 
       // Fork audio and video generation to run in the background
-      // without blocking the UI.
       (async () => {
         const currentAvatar = avatarUrl || defaultAvatars[gender];
+        
+        try {
+          const audioResult = await getAudioResponse({ text: response.response, voice: gender });
+          if (audioResult) {
+            handlePlayAudio(audioResult.audioDataUri);
+            setMessages(currentMessages => currentMessages.map(msg =>
+              (msg.text === response.response && msg.sender === 'ai' && !msg.audioDataUri)
+                ? { ...msg, audioDataUri: audioResult.audioDataUri }
+                : msg
+            ));
+          }
+        } catch (error) {
+          console.error("Audio generation failed:", error);
+          const errorMessage = (error as Error).message || "";
+          if (errorMessage.includes("429")) {
+            toast({
+              variant: "destructive",
+              title: "Audio Limit Reached",
+              description: "My voice needs a rest for today. We can still chat, but audio is unavailable.",
+            });
+          }
+        }
 
-        const audioPromise = getAudioResponse({ text: response.response, voice: gender }).catch(error => {
-            console.error("Audio generation failed:", error);
+        try {
+            const videoResult = await generateTalkingVideo({ avatarDataUri: currentAvatar, text: response.response });
+            if (videoResult) {
+                setVideoUrl(videoResult.videoDataUri);
+            }
+        } catch (error) {
+            console.error("Video generation failed:", error);
             const errorMessage = (error as Error).message || "";
             if (errorMessage.includes("429")) {
                 toast({
-                    variant: "destructive",
-                    title: "Audio Limit Reached",
-                    description: "My voice needs a rest for today. We can still chat, but audio is unavailable.",
-                });
-            }
-            return null; // Return null on failure
-        });
-        
-        const videoPromise = generateTalkingVideo({ avatarDataUri: currentAvatar, text: response.response }).catch(error => {
-            console.error("Video generation failed:", error);
-             const errorMessage = (error as Error).message || "";
-            if (errorMessage.includes("429")) {
-                 toast({
                     variant: "destructive",
                     title: "Video Limit Reached",
                     description: "I've been on camera too much today! Video is unavailable, but we can still chat.",
                 });
             } else if (!errorMessage.includes('billing')) {
-              toast({
-                variant: "destructive",
-                title: "Video Generation Failed",
-                description: "I'm having a bit of camera trouble right now.",
-              });
+                toast({
+                    variant: "destructive",
+                    title: "Video Generation Failed",
+                    description: "I'm having a bit of camera trouble right now.",
+                });
             }
-            return null; // Return null on failure
-        });
-
-        const [audioResult, videoResult] = await Promise.all([audioPromise, videoPromise]);
-        
-        if (audioResult) {
-            handlePlayAudio(audioResult.audioDataUri);
-            setMessages(currentMessages => currentMessages.map(msg => 
-                (msg.text === response.response && msg.sender === 'ai' && !msg.audioDataUri) 
-                ? {...msg, audioDataUri: audioResult.audioDataUri} 
-                : msg
-            ));
-        }
-
-        if (videoResult) {
-            setVideoUrl(videoResult.videoDataUri);
         }
       })();
 
