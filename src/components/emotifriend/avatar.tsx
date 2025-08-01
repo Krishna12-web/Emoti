@@ -73,8 +73,8 @@ export function Avatar({ emotion = 'neutral', avatarUrl, videoUrl, onAvatarUploa
           </div>
         )}
         <div className="absolute top-0 right-0 flex items-center gap-1">
-            <Button asChild size="icon" variant="ghost" className="rounded-full bg-background/50 hover:bg-background/80 cursor-pointer" onClick={onToggleMute}>
-                <span>
+            <Button asChild size="icon" variant="ghost" className="rounded-full bg-background/50 hover:bg-background/80 cursor-pointer">
+                <span onClick={onToggleMute}>
                     {isMuted ? <VolumeX className="w-5 h-5 text-primary" /> : <Volume2 className="w-5 h-5 text-primary" />}
                     <span className="sr-only">{isMuted ? "Unmute" : "Mute"}</span>
                 </span>
