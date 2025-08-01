@@ -119,16 +119,24 @@ export default function Home() {
       // Immediately play audio
       getAudioResponse({ text: response.response, voice: gender }).then(audioResponse => {
           handlePlayAudio(audioResponse.audioDataUri);
-          const lastMessage = messages[messages.length - 1];
-          if (lastMessage?.sender === 'ai') {
-              addMessage({...lastMessage, audioDataUri: audioResponse.audioDataUri, id: `${Date.now()}`});
-          }
+          // Find the last AI message and update it with the audio data.
+          // This is a bit of a workaround to avoid state issues with messages array.
+          setMessages(currentMessages => currentMessages.map(msg => 
+              (msg.text === response.response && msg.sender === 'ai' && !msg.audioDataUri) 
+              ? {...msg, audioDataUri: audioResponse.audioDataUri} 
+              : msg
+          ));
       }).catch(audioError => {
           console.error("Audio generation failed:", audioError);
+          const errorMessage = (audioError as Error).message || "Could not generate audio for the response.";
+          let errorDescription = "Could not generate audio for the response.";
+          if (errorMessage.includes("429")) {
+              errorDescription = "I've talked a lot today and my voice needs a rest. Audio is temporarily unavailable due to daily limits, but we can still chat!"
+          }
           toast({
               variant: "destructive",
               title: "Audio Generation Failed",
-              description: "Could not generate audio for the response.",
+              description: errorDescription,
           });
       });
       
@@ -141,12 +149,15 @@ export default function Home() {
       }).then(videoResponse => {
           setVideoUrl(videoResponse.videoDataUri);
       }).catch(videoError => {
+        const errorMessage = (videoError as Error).message || "Could not generate video.";
           console.error("Video generation failed:", videoError);
-          toast({
-            variant: "destructive",
-            title: "Video Generation Failed",
-            description: "Could not generate video. Playing audio instead.",
-          });
+          if (!errorMessage.includes('billing')) {
+            toast({
+              variant: "destructive",
+              title: "Video Generation Failed",
+              description: "Could not generate video. Playing audio instead.",
+            });
+          }
       });
       
       const userEmotion = mapSentimentToEmotion(combinedEmotion);
