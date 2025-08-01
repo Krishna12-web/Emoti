@@ -108,7 +108,7 @@ const generateAdaptiveResponseFlow = ai.defineFlow(
 
     return {
         response: response.text!,
-        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        toolCalls: toolCalls && toolCalls.length > 0 ? toolCalls : undefined,
     }
   }
 );
