@@ -91,32 +91,33 @@ export default function Home() {
 
       const currentAvatar = avatarUrl || defaultAvatars[gender];
 
-      let audioDataUri: string | undefined;
+      // Generate audio first for a quick response
+      const audioResponse = await getAudioResponse({ text: response.response, voice: gender });
+      const audioDataUri = audioResponse.audioDataUri;
+      handlePlayAudio(audioDataUri);
 
+      const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai', audioDataUri };
+      addMessage(aiMessage);
+      
+      const userEmotion = mapSentimentToEmotion(combinedEmotion);
+      setCurrentEmotion(userEmotion);
+      setIsThinking(false);
+
+      // Generate video in the background
       try {
-        // Generate talking video
         const videoResponse = await generateTalkingVideo({
             avatarDataUri: currentAvatar,
             text: response.response,
         });
         setVideoUrl(videoResponse.videoDataUri);
       } catch (videoError) {
-        console.error("Video generation failed, falling back to audio:", videoError);
+        console.error("Video generation failed:", videoError);
         toast({
           variant: "destructive",
           title: "Video Generation Failed",
-          description: "Could not generate video. The AI will respond with audio only. This may be due to account billing status.",
+          description: "Could not generate video. This may be due to account billing status.",
         });
-        const audioResponse = await getAudioResponse({ text: response.response, voice: gender });
-        audioDataUri = audioResponse.audioDataUri;
-        handlePlayAudio(audioDataUri);
       }
-      
-      const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai', audioDataUri };
-      addMessage(aiMessage);
-      
-      const userEmotion = mapSentimentToEmotion(combinedEmotion);
-      setCurrentEmotion(userEmotion);
 
     } catch (error) {
       console.error('Error generating response:', error);
@@ -126,8 +127,7 @@ export default function Home() {
         description: "I'm having trouble thinking right now. Please try again later.",
       });
       setCurrentEmotion('sad');
-    } finally {
-      setIsThinking(false);
+      setIsThinking(false); // Make sure to reset thinking state on error
     }
   };
   
@@ -182,8 +182,7 @@ export default function Home() {
           } catch(e) {
              toast({ variant: "destructive", title: "Voice Analysis Failed", description: "I couldn't understand the audio. Please try again." });
              setCurrentEmotion('sad');
-          } finally {
-            setIsThinking(false);
+             setIsThinking(false);
           }
         };
       };
