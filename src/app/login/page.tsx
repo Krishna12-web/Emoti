@@ -36,20 +36,18 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || window.recaptchaVerifier) return;
 
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved, allow signInWithPhoneNumber.
-        }
-      });
-      // Render the reCAPTCHA widget
-      window.recaptchaVerifier.render().catch(err => {
-        console.error("reCAPTCHA render error:", err);
-      });
-    }
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      'size': 'invisible',
+      'callback': () => {
+        // reCAPTCHA solved, allow signInWithPhoneNumber.
+      }
+    });
+    // Render the reCAPTCHA widget
+    window.recaptchaVerifier.render().catch(err => {
+      console.error("reCAPTCHA render error:", err);
+    });
   }, [isClient, auth]);
   
   const handleEmailLogin = async (e: React.FormEvent) => {

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Message } from '@/lib/types';
 import { useAuth } from '@/context/auth-context';
 
@@ -21,32 +21,37 @@ export function useConversation() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const getStorageKey = useCallback(() => {
+  // Memoize storage key to prevent re-renders
+  const storageKey = useMemo(() => {
     return user ? `emotifriend-conversation-${user.uid}` : null;
   }, [user]);
 
+  // Load messages from localStorage when user is available
   useEffect(() => {
-    const storageKey = getStorageKey();
     if (storageKey) {
       try {
         const stored = window.localStorage.getItem(storageKey);
         if (stored) {
           setMessages(JSON.parse(stored));
         } else {
+          // If no history, set initial message
           setMessages(getInitialMessages());
         }
       } catch (error) {
         console.error("Failed to parse messages from localStorage", error);
         setMessages(getInitialMessages());
       }
+      setIsInitialized(true);
     } else {
+      // If there's no user, we can show initial messages but don't mark as initialized for saving
       setMessages(getInitialMessages());
+      setIsInitialized(false);
     }
-    setIsInitialized(true);
-  }, [getStorageKey]);
+  }, [storageKey]);
 
+  // Save messages to localStorage whenever they change
   useEffect(() => {
-    const storageKey = getStorageKey();
+    // Only save if the user is logged in and messages have been initialized
     if (isInitialized && storageKey) {
       try {
         window.localStorage.setItem(storageKey, JSON.stringify(messages));
@@ -54,7 +59,7 @@ export function useConversation() {
         console.error("Failed to save messages to localStorage", error);
       }
     }
-  }, [messages, isInitialized, getStorageKey]);
+  }, [messages, isInitialized, storageKey]);
 
   const addMessage = useCallback((message: Omit<Message, 'id' | 'timestamp'>) => {
     const newMessage: Message = {
@@ -66,16 +71,16 @@ export function useConversation() {
   }, []);
 
   const clearConversation = useCallback(() => {
-    setMessages(getInitialMessages());
-    const storageKey = getStorageKey();
+    const initialMessages = getInitialMessages();
+    setMessages(initialMessages);
     if (storageKey) {
       try {
-        window.localStorage.removeItem(storageKey);
+        window.localStorage.setItem(storageKey, JSON.stringify(initialMessages));
       } catch (error) {
-        console.error("Failed to clear messages from localStorage", error);
+        console.error("Failed to clear messages in localStorage", error);
       }
     }
-  }, [getStorageKey]);
+  }, [storageKey]);
 
   const history = messages.map(msg => `${msg.sender}: ${msg.text}`);
 
