@@ -163,10 +163,15 @@ export default function Home() {
 
     } catch (error) {
       console.error('Error generating response:', error);
+      const errorMessage = (error as Error).message || "";
+      let errorDescription = "I'm having trouble thinking right now. Please try again later.";
+      if (errorMessage.includes("429")) {
+          errorDescription = "I've talked a lot today and my voice needs a rest. Audio is temporarily unavailable due to daily limits, but we can still chat!"
+      }
       toast({
         variant: "destructive",
         title: "Error",
-        description: "I'm having trouble thinking right now. Please try again later.",
+        description: errorDescription,
       });
       setCurrentEmotion('sad');
     } finally {
