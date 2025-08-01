@@ -66,5 +66,5 @@ export function useConversation() {
 
   const history = messages.map(msg => `${msg.sender}: ${msg.text}`);
 
-  return { messages, addMessage, history, clearConversation };
+  return { messages, addMessage, history, clearConversation, setMessages };
 }

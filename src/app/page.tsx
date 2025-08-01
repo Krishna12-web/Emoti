@@ -18,7 +18,7 @@ const defaultAvatars: Record<Gender, string> = {
 }
 
 export default function Home() {
-  const { messages, addMessage, history, clearConversation } = useConversation();
+  const { messages, addMessage, history, clearConversation, setMessages } = useConversation();
   const [currentEmotion, setCurrentEmotion] = useState<Emotion>('neutral');
   const [isThinking, setIsThinking] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -119,8 +119,6 @@ export default function Home() {
       // Immediately play audio
       getAudioResponse({ text: response.response, voice: gender }).then(audioResponse => {
           handlePlayAudio(audioResponse.audioDataUri);
-          // Find the last AI message and update it with the audio data.
-          // This is a bit of a workaround to avoid state issues with messages array.
           setMessages(currentMessages => currentMessages.map(msg => 
               (msg.text === response.response && msg.sender === 'ai' && !msg.audioDataUri) 
               ? {...msg, audioDataUri: audioResponse.audioDataUri} 
