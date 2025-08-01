@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getAuth, signInWithEmailAndPassword, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -69,8 +70,17 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
-      <div className="w-full max-w-md">
+    <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 relative">
+        <div className="absolute top-8 flex flex-col items-center">
+            <Image 
+                src="https://i.imgur.com/3flw6h1.png"
+                alt="EmotiFriend Logo"
+                width={150}
+                height={150}
+                data-ai-hint="logo E K"
+            />
+        </div>
+      <div className="w-full max-w-md mt-32">
         <h1 className="text-4xl font-headline text-center text-primary-foreground/80 mb-8">Welcome Back to EmotiFriend</h1>
         <Tabs defaultValue="email" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -103,6 +113,9 @@ export default function LoginPage() {
         </p>
       </div>
       <div id="recaptcha-container"></div>
+       <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
+        App Owner: Krishna Saini
+      </footer>
     </main>
   );
 }
