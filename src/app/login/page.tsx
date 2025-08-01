@@ -26,12 +26,17 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [otpSent, setOtpSent] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const auth = getAuth(app);
   const router = useRouter();
 
   useEffect(() => {
-    if (auth && !window.recaptchaVerifier) {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (isClient && auth && !window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': (response: any) => {
@@ -39,7 +44,7 @@ export default function LoginPage() {
         }
       });
     }
-  }, [auth]);
+  }, [isClient, auth]);
   
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +59,12 @@ export default function LoginPage() {
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!window.recaptchaVerifier) {
+        toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: 'Please wait a moment and try again.' });
+        return;
+    }
     try {
-      const appVerifier = window.recaptchaVerifier!;
+      const appVerifier = window.recaptchaVerifier;
       const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
       setConfirmationResult(result);
       setOtpSent(true);
@@ -114,7 +123,7 @@ export default function LoginPage() {
           Don't have an account? <Link href="/signup" className="text-primary hover:underline">Sign Up</Link>
         </p>
       </div>
-      <div id="recaptcha-container"></div>
+      {isClient && <div id="recaptcha-container"></div>}
        <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
         App Owner: Krishna Saini
       </footer>
