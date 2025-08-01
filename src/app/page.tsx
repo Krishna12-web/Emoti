@@ -66,7 +66,7 @@ export default function Home() {
 
     setIsThinking(true);
     setCurrentEmotion('thinking');
-    setVideoUrl(null); // Clear previous video
+    setVideoUrl(null);
     
     const userMessage: Omit<Message, 'id'| 'timestamp'> = { text, sender: 'user' };
     addMessage(userMessage);
@@ -89,39 +89,41 @@ export default function Home() {
         pastConversations: history,
       });
 
+      const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai' };
+      addMessage(aiMessage);
+      
       const currentAvatar = avatarUrl || defaultAvatars[gender];
-      let audioPlayed = false;
 
-      // Generate video in the background
-      generateTalkingVideo({
-          avatarDataUri: currentAvatar,
-          text: response.response,
-      }).then(videoResponse => {
+      try {
+        const videoResponse = await generateTalkingVideo({
+            avatarDataUri: currentAvatar,
+            text: response.response,
+        });
         setVideoUrl(videoResponse.videoDataUri);
-      }).catch(videoError => {
+      } catch (videoError) {
         console.error("Video generation failed:", videoError);
         toast({
           variant: "destructive",
           title: "Video Generation Failed",
           description: "Could not generate video. Falling back to audio.",
         });
-        // Fallback to audio if video fails
-        if (!audioPlayed) {
-          getAudioResponse({ text: response.response, voice: gender }).then(audioResponse => {
+        
+        try {
+            const audioResponse = await getAudioResponse({ text: response.response, voice: gender });
             handlePlayAudio(audioResponse.audioDataUri);
-            const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai', audioDataUri: audioResponse.audioDataUri };
-            addMessage(aiMessage);
-          });
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage.sender === 'ai') {
+                addMessage({...lastMessage, audioDataUri: audioResponse.audioDataUri, id: `${Date.now()}`});
+            }
+        } catch (audioError) {
+            console.error("Audio generation failed:", audioError);
+            toast({
+                variant: "destructive",
+                title: "Audio Generation Failed",
+                description: "Could not generate audio either.",
+            });
         }
-      });
-      
-      // Get audio response right away
-      const audioResponse = await getAudioResponse({ text: response.response, voice: gender });
-      handlePlayAudio(audioResponse.audioDataUri);
-      audioPlayed = true;
-
-      const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai', audioDataUri: audioResponse.audioDataUri };
-      addMessage(aiMessage);
+      }
       
       const userEmotion = mapSentimentToEmotion(combinedEmotion);
       setCurrentEmotion(userEmotion);
