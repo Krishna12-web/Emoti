@@ -38,18 +38,21 @@ export default function SignupPage() {
   }, []);
 
   useEffect(() => {
-    if (!isClient || window.recaptchaVerifier) return;
-    const auth = getAuth(app);
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      'size': 'invisible',
-      'callback': () => {
-        // reCAPTCHA solved, allow signInWithPhoneNumber.
-      }
-    });
-    // Render the reCAPTCHA widget
-    window.recaptchaVerifier.render().catch(err => {
-      console.error("reCAPTCHA render error:", err);
-    });
+    if (!isClient) return;
+
+    if (!window.recaptchaVerifier) {
+      const auth = getAuth(app);
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          // reCAPTCHA solved, allow signInWithPhoneNumber.
+        }
+      });
+       // Render the reCAPTCHA widget
+       window.recaptchaVerifier.render().catch(err => {
+        console.error("reCAPTCHA render error:", err);
+      });
+    }
   }, [isClient]);
 
   const handleEmailSignup = async (e: React.FormEvent) => {
