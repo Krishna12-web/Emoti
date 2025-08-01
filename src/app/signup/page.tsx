@@ -91,7 +91,9 @@ export default function SignupPage() {
     try {
       const userCredential = await confirmationResult.confirm(otp);
       // You can update profile here as well if you collect name for phone signup
-      // await updateProfile(userCredential.user, { displayName: name });
+      if (name) {
+          await updateProfile(userCredential.user, { displayName: name });
+      }
       toast({ title: 'Account created and logged in successfully!' });
       router.push('/');
     } catch (error: any) {
@@ -121,6 +123,7 @@ export default function SignupPage() {
               <>
                 {!otpSent ? (
                   <form onSubmit={handlePhoneSignup} className="space-y-4 mt-4">
+                    <Input type="text" placeholder="Name (Optional)" value={name} onChange={(e) => setName(e.target.value)} className="bg-input" />
                     <Input type="tel" placeholder="Phone Number with country code" value={phone} onChange={(e) => setPhone(e.target.value)} required className="bg-input" />
                     <Button type="submit" className="w-full">Send OTP</Button>
                   </form>
@@ -130,6 +133,7 @@ export default function SignupPage() {
                     <Button type="submit" className="w-full">Verify OTP & Sign Up</Button>
                   </form>
                 )}
+                <div id="recaptcha-container"></div>
               </>
             )}
           </TabsContent>
@@ -138,7 +142,6 @@ export default function SignupPage() {
           Already have an account? <Link href="/login" className="text-primary hover:underline">Log In</Link>
         </p>
       </div>
-      <div id="recaptcha-container"></div>
        <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
         App Owner: Krishna Saini
       </footer>

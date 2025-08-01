@@ -88,7 +88,7 @@ export default function LoginPage() {
       await confirmationResult.confirm(otp);
       toast({ title: 'Logged in successfully!' });
       router.push('/');
-    } catch (error: any) => {
+    } catch (error: any) {
       toast({ variant: 'destructive', title: 'Invalid OTP', description: error.message });
     }
   };
@@ -123,6 +123,7 @@ export default function LoginPage() {
                     <Button type="submit" className="w-full">Verify OTP & Login</Button>
                   </form>
                 )}
+                <div id="recaptcha-container"></div>
               </>
             )}
           </TabsContent>
@@ -131,7 +132,6 @@ export default function LoginPage() {
           Don't have an account? <Link href="/signup" className="text-primary hover:underline">Sign Up</Link>
         </p>
       </div>
-      <div id="recaptcha-container"></div>
        <footer className="absolute bottom-4 text-center text-sm text-muted-foreground">
         App Owner: Krishna Saini
       </footer>
