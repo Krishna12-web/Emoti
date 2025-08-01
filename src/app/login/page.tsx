@@ -48,6 +48,7 @@ export default function LoginPage() {
 
   const setupRecaptcha = () => {
     const auth = getAuth(app);
+    // Ensure this runs only on the client and only once.
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',

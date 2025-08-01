@@ -40,7 +40,9 @@ export default function SignupPage() {
     const auth = getAuth(app);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, { displayName: name });
+      if (name) {
+        await updateProfile(userCredential.user, { displayName: name });
+      }
       toast({ title: 'Account created successfully!' });
       router.push('/');
     } catch (error: any)      {
@@ -50,6 +52,7 @@ export default function SignupPage() {
 
   const setupRecaptcha = () => {
     const auth = getAuth(app);
+    // Ensure this runs only on the client and only once.
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
