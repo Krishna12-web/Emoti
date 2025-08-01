@@ -48,7 +48,6 @@ export default function LoginPage() {
 
   const setupRecaptcha = () => {
     const auth = getAuth(app);
-    // Ensure this runs only on the client and only once.
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
@@ -56,17 +55,18 @@ export default function LoginPage() {
           // reCAPTCHA solved
         }
       });
-      window.recaptchaVerifier.render();
     }
     return window.recaptchaVerifier;
   };
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const appVerifier = setupRecaptcha(); 
     const auth = getAuth(app);
+    const appVerifier = setupRecaptcha(); 
     try {
-      const result = await signInWithPhoneNumber(auth, `+${phone}`, appVerifier);
+      // Ensure phone number has a '+' prefix
+      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+      const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       setConfirmationResult(result);
       setOtpSent(true);
       toast({ title: 'OTP Sent!', description: 'Please check your phone for the OTP.' });
