@@ -95,40 +95,42 @@ export default function Home() {
         userInput: translatedText,
         pastConversations: history,
       });
-
+      
       const aiMessage: Omit<Message, 'id' | 'timestamp'> = { text: response.response, sender: 'ai' };
       addMessage(aiMessage);
+
+      // Immediately play audio
+      getAudioResponse({ text: response.response, voice: gender }).then(audioResponse => {
+          handlePlayAudio(audioResponse.audioDataUri);
+          const lastMessage = messages[messages.length - 1];
+          if (lastMessage?.sender === 'ai') {
+              addMessage({...lastMessage, audioDataUri: audioResponse.audioDataUri, id: `${Date.now()}`});
+          }
+      }).catch(audioError => {
+          console.error("Audio generation failed:", audioError);
+          toast({
+              variant: "destructive",
+              title: "Audio Generation Failed",
+              description: "Could not generate audio for the response.",
+          });
+      });
       
       const currentAvatar = avatarUrl || defaultAvatars[gender];
 
-        generateTalkingVideo({
-            avatarDataUri: currentAvatar,
-            text: response.response,
-        }).then(videoResponse => {
-            setVideoUrl(videoResponse.videoDataUri);
-        }).catch(videoError => {
-            console.error("Video generation failed:", videoError);
-            toast({
-              variant: "destructive",
-              title: "Video Generation Failed",
-              description: "Could not generate video. Falling back to audio.",
-            });
-            
-            getAudioResponse({ text: response.response, voice: gender }).then(audioResponse => {
-                handlePlayAudio(audioResponse.audioDataUri);
-                const lastMessage = messages[messages.length - 1];
-                if (lastMessage?.sender === 'ai') {
-                    addMessage({...lastMessage, audioDataUri: audioResponse.audioDataUri, id: `${Date.now()}`});
-                }
-            }).catch(audioError => {
-                console.error("Audio generation failed:", audioError);
-                toast({
-                    variant: "destructive",
-                    title: "Audio Generation Failed",
-                    description: "Could not generate audio either.",
-                });
-            });
-        });
+      // Generate video in the background
+      generateTalkingVideo({
+          avatarDataUri: currentAvatar,
+          text: response.response,
+      }).then(videoResponse => {
+          setVideoUrl(videoResponse.videoDataUri);
+      }).catch(videoError => {
+          console.error("Video generation failed:", videoError);
+          toast({
+            variant: "destructive",
+            title: "Video Generation Failed",
+            description: "Could not generate video. Playing audio instead.",
+          });
+      });
       
       const userEmotion = mapSentimentToEmotion(combinedEmotion);
       setCurrentEmotion(userEmotion);
@@ -280,6 +282,10 @@ export default function Home() {
       setAnalysisResult(prev => ({ ...prev, face: result.emotionalState }));
       const emotion = mapSentimentToEmotion(result.emotionalState);
       setCurrentEmotion(emotion);
+      if (result.gender !== 'unknown') {
+        setGender(result.gender);
+        toast({ title: "Voice Updated", description: `Switched to ${result.gender} voice.`});
+      }
     } catch(e) {
       toast({ variant: "destructive", title: "Facial Analysis Failed", description: "I couldn't analyze the image. Please try again." });
       setCurrentEmotion('sad');
@@ -298,13 +304,26 @@ export default function Home() {
       reader.onloadend = async () => {
         const photoDataUri = reader.result as string;
         try {
-          toast({ title: "Generating new avatar...", description: "This might take a moment."});
-          const result = await generateAvatar({ photoDataUri });
-          setAvatarUrl(result.avatarDataUri);
+          toast({ title: "Analyzing photo and generating avatar...", description: "This might take a moment."});
+          
+          const [avatarResult, facialAnalysisResult] = await Promise.all([
+            generateAvatar({ photoDataUri }),
+            performFacialAnalysis(photoDataUri)
+          ]);
+          
+          setAvatarUrl(avatarResult.avatarDataUri);
           toast({ title: "Avatar updated!", description: "Your new avatar is ready."});
+          
+          if (facialAnalysisResult.gender !== 'unknown') {
+            setGender(facialAnalysisResult.gender);
+            toast({ title: "Voice Updated", description: `AI voice has been set to ${facialAnalysisResult.gender}.`});
+          }
+          setAnalysisResult(prev => ({...prev, face: facialAnalysisResult.emotionalState}));
+          setCurrentEmotion(mapSentimentToEmotion(facialAnalysisResult.emotionalState));
+
         } catch (error) {
-          console.error("Avatar generation failed:", error);
-          toast({ variant: "destructive", title: "Avatar Generation Failed", description: "I couldn't create an avatar from that image. Please try another one." });
+          console.error("Avatar generation or analysis failed:", error);
+          toast({ variant: "destructive", title: "Oops!", description: "I couldn't create an avatar or analyze the image. Please try another one." });
         } finally {
           setIsThinking(false);
           setCurrentEmotion('neutral');
