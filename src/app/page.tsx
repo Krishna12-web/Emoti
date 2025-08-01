@@ -11,6 +11,10 @@ import { EmotionStatus } from '@/components/emotifriend/emotion-status';
 import { ChatInterface } from '@/components/emotifriend/chat-interface';
 import { GenderSelector } from '@/components/emotifriend/gender-selector';
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from '@/context/auth-context';
+import { getAuth, signOut } from 'firebase/auth';
+import { Button } from '@/components/ui/button';
+import { LogOut } from 'lucide-react';
 
 const defaultAvatars: Record<Gender, string> = {
     female: "https://placehold.co/192x192.png",
@@ -18,6 +22,7 @@ const defaultAvatars: Record<Gender, string> = {
 }
 
 export default function Home() {
+  const { user, loading } = useAuth();
   const { messages, addMessage, history, clearConversation, setMessages } = useConversation();
   const [currentEmotion, setCurrentEmotion] = useState<Emotion>('neutral');
   const [isThinking, setIsThinking] = useState(false);
@@ -36,6 +41,18 @@ export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const { toast } = useToast();
+  const auth = getAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: 'Signed out successfully.' });
+      // The AuthProvider will handle the redirect
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Sign Out Failed', description: error.message });
+    }
+  };
+
 
   const cleanupMedia = useCallback(() => {
     if (streamRef.current) {
@@ -364,7 +381,7 @@ export default function Home() {
           ]);
           
           setAvatarUrl(avatarResult.avatarDataUri);
-          toast({ title: "Avatar updated!", description: "Your new avatar is ready."});
+toast({ title: "Avatar updated!", description: "Your new avatar is ready."});
           
           if (facialAnalysisResult.gender !== 'unknown') {
             setGender(facialAnalysisResult.gender);
@@ -394,16 +411,31 @@ export default function Home() {
     setVideoUrl(null);
     toast({ title: "Chat cleared", description: "The conversation has been reset." });
   };
+  
+  if (loading || !user) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+        </div>
+    )
+  }
 
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4 overflow-hidden">
       <div className="w-full max-w-2xl mx-auto flex flex-col h-full">
-        <header className="w-full py-4">
-          <h1 className="text-4xl font-headline text-center text-primary-foreground/80">EmotiFriend</h1>
-          <SupportLinks />
-          <GenderSelector gender={gender} onGenderChange={setGender} disabled={isThinking}/>
+      <header className="w-full py-4 flex justify-between items-center">
+            <div>
+                <h1 className="text-4xl font-headline text-center text-primary-foreground/80">EmotiFriend</h1>
+                <p className="text-sm text-muted-foreground">Welcome, {user.email || user.phoneNumber}</p>
+            </div>
+            <Button onClick={handleSignOut} variant="ghost" size="icon">
+                <LogOut className="h-5 w-5" />
+                <span className="sr-only">Sign Out</span>
+            </Button>
         </header>
+        <SupportLinks />
+        <GenderSelector gender={gender} onGenderChange={setGender} disabled={isThinking}/>
 
         <div className="flex-shrink-0 flex justify-center items-center py-6">
           <Avatar
@@ -440,5 +472,3 @@ export default function Home() {
     </main>
   );
 }
-
-    
