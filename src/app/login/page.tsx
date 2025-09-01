@@ -16,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 declare global {
   interface Window {
     recaptchaVerifier?: RecaptchaVerifier;
+    confirmationResult?: ConfirmationResult;
   }
 }
 
@@ -24,36 +25,31 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const auth = getAuth(app);
 
   useEffect(() => {
+    // This effect runs only on the client, after the component has mounted.
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (!isClient) return;
-
-    const auth = getAuth(app);
+  const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
-      // Ensure the container exists before initializing
-      if (document.getElementById('recaptcha-container')) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-          'size': 'invisible',
-          'callback': () => {
-            // reCAPTCHA solved
-          }
-        });
-      }
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          // reCAPTCHA solved
+        }
+      });
     }
-  }, [isClient]);
+    return window.recaptchaVerifier;
+  };
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const auth = getAuth(app);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({ title: 'Logged in successfully!' });
@@ -65,32 +61,27 @@ export default function LoginPage() {
 
   const handlePhoneLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const auth = getAuth(app);
-    const appVerifier = window.recaptchaVerifier;
-    if (!appVerifier) {
-      toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: "Please wait a moment and try again." });
-      return;
-    }
     try {
+      const appVerifier = setupRecaptcha();
       const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-      const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      setConfirmationResult(result);
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+      window.confirmationResult = confirmationResult;
       setOtpSent(true);
       toast({ title: 'OTP Sent!', description: 'Please check your phone for the OTP.' });
     } catch (error: any) {
       console.error("Phone Signin Error:", error);
-      toast({ variant: 'destructive', title: 'Failed to send OTP', description: "Something went wrong. Make sure your phone number is correct and includes the country code." });
+      toast({ variant: 'destructive', title: 'Failed to send OTP', description: error.message });
     }
   };
 
   const handleOtpVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!confirmationResult) {
+    if (!window.confirmationResult) {
       toast({ variant: 'destructive', title: 'Verification failed', description: 'Please try sending the OTP again.' });
       return;
     }
     try {
-      await confirmationResult.confirm(otp);
+      await window.confirmationResult.confirm(otp);
       toast({ title: 'Logged in successfully!' });
       router.push('/');
     } catch (error: any) {
@@ -123,7 +114,7 @@ export default function LoginPage() {
                 </form>
             </TabsContent>
             <TabsContent value="phone">
-                {isClient && (
+                {isClient && ( // Only render this content on the client
                 <>
                     {!otpSent ? (
                     <form onSubmit={handlePhoneLogin} className="space-y-4 mt-4">

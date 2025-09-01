@@ -16,6 +16,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 declare global {
     interface Window {
         recaptchaVerifier?: RecaptchaVerifier;
+        confirmationResult?: ConfirmationResult;
     }
 }
 
@@ -25,74 +26,64 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
   const [otpSent, setOtpSent] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const auth = getAuth(app);
 
   useEffect(() => {
+    // This effect runs only on the client, after the component has mounted.
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (!isClient) return;
-
-    const auth = getAuth(app);
+  const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
-      if (document.getElementById('recaptcha-container')) {
         window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
             'size': 'invisible',
             'callback': () => {
                 // reCAPTCHA solved
             },
         });
-      }
     }
-  }, [isClient]);
+    return window.recaptchaVerifier;
+  };
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    const auth = getAuth(app);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName: name });
       toast({ title: 'Account created successfully!' });
       router.push('/');
-    } catch (error: any)      {
+    } catch (error: any) {
       toast({ variant: 'destructive', title: 'Signup Failed', description: error.message });
     }
   };
 
   const handlePhoneSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    const auth = getAuth(app);
-    const appVerifier = window.recaptchaVerifier;
-    if (!appVerifier) {
-        toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: "Please wait a moment and try again." });
-        return;
-    }
-    
     try {
+        const appVerifier = setupRecaptcha();
         const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
-        const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-        setConfirmationResult(result);
+        const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+        window.confirmationResult = confirmationResult;
         setOtpSent(true);
         toast({ title: 'OTP Sent!', description: 'Please check your phone for the OTP.' });
       } catch (error: any) {
         console.error("Phone Signup Error:", error);
-        toast({ variant: 'destructive', title: 'Failed to send OTP', description: "Something went wrong. Make sure your phone number is correct and includes the country code." });
+        toast({ variant: 'destructive', title: 'Failed to send OTP', description: error.message });
       }
   };
 
   const handleOtpVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!confirmationResult) {
+    if (!window.confirmationResult) {
         toast({ variant: 'destructive', title: 'Verification failed', description: 'Please try sending the OTP again.' });
         return;
     }
     try {
-      const userCredential = await confirmationResult.confirm(otp);
+      const userCredential = await window.confirmationResult.confirm(otp);
       await updateProfile(userCredential.user, { displayName: name });
       toast({ title: 'Account created and logged in successfully!' });
       router.push('/');
@@ -127,7 +118,7 @@ export default function SignupPage() {
                 </form>
             </TabsContent>
             <TabsContent value="phone">
-                {isClient && (
+                {isClient && ( // Only render this content on the client
                 <>
                     {!otpSent ? (
                     <form onSubmit={handlePhoneSignup} className="space-y-4 mt-4">
