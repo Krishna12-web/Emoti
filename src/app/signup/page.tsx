@@ -14,7 +14,10 @@ import { BrainCircuit } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
 
-const PhoneSignupForm = dynamic(() => import('@/components/auth/phone-signup-form'), { ssr: false });
+const PhoneSignupForm = dynamic(() => import('@/components/auth/phone-signup-form'), { 
+  ssr: false,
+  loading: () => <div className="space-y-4 mt-4"><div className="h-10 w-full bg-input rounded-md animate-pulse" /><div className="h-10 w-full bg-primary/50 rounded-md animate-pulse" /></div>
+});
 
 export default function SignupPage() {
   const [name, setName] = useState('');
