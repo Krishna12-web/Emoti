@@ -17,7 +17,7 @@ type Message = {
     sender: 'user' | 'ai';
 };
 
-export default function DigitalTwinPage() {
+export default function EmotiFriendPage() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const auth = getAuth();
@@ -50,7 +50,7 @@ export default function DigitalTwinPage() {
   useEffect(() => {
     if (personaImage && personaChat && personaVoiceInfo) {
         setIsPersonaReady(true);
-        toast({ title: "Persona Ready!", description: "Your Digital Twin is ready to chat." });
+        toast({ title: "Persona Ready!", description: "Your EmotiFriend is ready to chat." });
     } else {
         setIsPersonaReady(false);
     }
@@ -151,7 +151,7 @@ export default function DigitalTwinPage() {
     <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
         <Card className="w-full">
             <CardHeader className="text-center">
-                <CardTitle className="text-3xl font-bold">Create Your Digital Twin</CardTitle>
+                <CardTitle className="text-3xl font-bold">Create Your EmotiFriend</CardTitle>
                 <CardDescription>Upload a photo, chat style, and voice sample to create an AI persona.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
@@ -220,7 +220,7 @@ export default function DigitalTwinPage() {
             ) : avatarUrl ? (
                 <Image 
                     src={avatarUrl}
-                    alt="Digital Twin Avatar"
+                    alt="EmotiFriend Avatar"
                     width={150}
                     height={150}
                     className="rounded-full object-cover shadow-lg border-4 border-primary/50"
@@ -257,7 +257,7 @@ export default function DigitalTwinPage() {
         <div className="p-4 border-t">
             <div className="relative">
                 <Textarea 
-                    placeholder="Chat with your Digital Twin..."
+                    placeholder="Chat with your EmotiFriend..."
                     value={userInput}
                     onChange={e => setUserInput(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); }}}
@@ -282,7 +282,7 @@ export default function DigitalTwinPage() {
         <header className="w-full max-w-4xl mx-auto py-4 flex justify-between items-center mb-6">
             <div className="flex items-center gap-2">
                 <BrainCircuit className="w-8 h-8 text-primary"/>
-                <h1 className="text-3xl font-bold">Digital Twin</h1>
+                <h1 className="text-3xl font-bold">EmotiFriend</h1>
             </div>
             <div>
                 <span className="text-sm text-muted-foreground mr-4">Welcome, {user?.displayName || user?.email}</span>

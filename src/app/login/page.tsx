@@ -40,12 +40,12 @@ export default function LoginPage() {
     <main className="flex flex-col items-center justify-center min-h-screen bg-background text-foreground p-4">
       <div className="flex items-center gap-2 mb-8">
         <BrainCircuit className="w-10 h-10 text-primary"/>
-        <h1 className="text-4xl font-bold">Digital Twin</h1>
+        <h1 className="text-4xl font-bold">EmotiFriend</h1>
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
             <CardTitle>Welcome Back</CardTitle>
-            <CardDescription>Sign in to access your Digital Twin.</CardDescription>
+            <CardDescription>Sign in to access your EmotiFriend.</CardDescription>
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="email" className="w-full">

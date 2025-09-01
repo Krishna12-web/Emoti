@@ -5,8 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 
 export const metadata: Metadata = {
-  title: 'Digital Twin',
-  description: 'Create an AI persona of anyone.',
+  title: 'EmotiFriend',
+  description: 'Your AI companion that understands you.',
 };
 
 export default function RootLayout({
@@ -30,5 +30,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    
