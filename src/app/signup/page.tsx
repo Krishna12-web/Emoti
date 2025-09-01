@@ -35,6 +35,22 @@ export default function SignupPage() {
     setIsClient(true);
   }, []);
 
+  useEffect(() => {
+    if (!isClient) return;
+
+    const auth = getAuth(app);
+    if (!window.recaptchaVerifier) {
+      if (document.getElementById('recaptcha-container')) {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': () => {
+                // reCAPTCHA solved
+            },
+        });
+      }
+    }
+  }, [isClient]);
+
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     const auth = getAuth(app);
@@ -48,23 +64,14 @@ export default function SignupPage() {
     }
   };
 
-  const setupRecaptcha = () => {
-    const auth = getAuth(app);
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-            // reCAPTCHA solved
-        },
-      });
-    }
-    return window.recaptchaVerifier;
-  };
-
   const handlePhoneSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     const auth = getAuth(app);
-    const appVerifier = setupRecaptcha();
+    const appVerifier = window.recaptchaVerifier;
+    if (!appVerifier) {
+        toast({ variant: 'destructive', title: 'reCAPTCHA not ready', description: "Please wait a moment and try again." });
+        return;
+    }
     
     try {
         const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
@@ -147,5 +154,3 @@ export default function SignupPage() {
     </main>
   );
 }
-
-    
