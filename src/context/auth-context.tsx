@@ -33,11 +33,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (loading) return;
 
-    const isAuthPage = pathname === '/login' || pathname === '/signup';
+    const isAuthPage = pathname === '/signup';
 
     if (!user && !isAuthPage) {
-      // If user is not logged in and not on an auth page, redirect to login
-      router.push('/login');
+      // If user is not logged in and not on an auth page, redirect to signup
+      router.push('/signup');
     } else if (user && isAuthPage) {
       // If user is logged in and on an auth page, redirect to home
       router.push('/');

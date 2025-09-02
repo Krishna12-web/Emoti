@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { app } from '@/lib/firebase';
 import { BrainCircuit } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -49,8 +48,8 @@ export default function SignupPage() {
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-            <CardTitle>Create an Account</CardTitle>
-            <CardDescription>Join to create your own AI personas.</CardDescription>
+            <CardTitle>Create an Account or Sign In</CardTitle>
+            <CardDescription>Join or sign in to create your own AI personas.</CardDescription>
         </CardHeader>
         <CardContent>
             <Tabs defaultValue="email" className="w-full">
@@ -60,19 +59,16 @@ export default function SignupPage() {
             </TabsList>
             <TabsContent value="email">
                 <form onSubmit={handleEmailSignup} className="space-y-4 mt-4">
-                <Input type="text" placeholder="Full Name" value={name} onChange={(e) => setName(e.target.value)} required className="bg-input" />
+                <Input type="text" placeholder="Full Name (for new accounts)" value={name} onChange={(e) => setName(e.target.value)} className="bg-input" />
                 <Input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required className="bg-input" />
                 <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="bg-input" />
-                <Button type="submit" className="w-full">Sign Up with Email</Button>
+                <Button type="submit" className="w-full">Sign Up or Sign In</Button>
                 </form>
             </TabsContent>
             <TabsContent value="phone">
               <PhoneSignupForm />
             </TabsContent>
             </Tabs>
-            <p className="mt-4 text-center text-sm">
-            Already have an account? <Link href="/login" className="text-primary hover:underline">Log In</Link>
-            </p>
         </CardContent>
       </Card>
     </main>
