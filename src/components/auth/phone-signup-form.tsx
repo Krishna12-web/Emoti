@@ -14,6 +14,7 @@ declare global {
     interface Window {
         recaptchaVerifier?: RecaptchaVerifier;
         confirmationResult?: ConfirmationResult;
+        grecaptcha?: { reset: (widgetId?: any) => void };
     }
 }
 
@@ -53,7 +54,7 @@ export default function PhoneSignupForm() {
         toast({ variant: 'destructive', title: 'Failed to send OTP', description: error.message });
          // Reset reCAPTCHA
         window.recaptchaVerifier?.render().then((widgetId) => {
-            grecaptcha.reset(widgetId);
+            window.grecaptcha?.reset(widgetId as any);
         });
       }
   };

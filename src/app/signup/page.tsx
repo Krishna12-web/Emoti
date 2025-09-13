@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, updateProfile, signInWithEmailAndPassword } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { app } from '@/lib/firebase';
 import { BrainCircuit } from 'lucide-react';
@@ -30,12 +30,30 @@ export default function SignupPage() {
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Try to create account first
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, { displayName: name });
+      if (name) {
+        await updateProfile(userCredential.user, { displayName: name });
+      }
       toast({ title: 'Account created successfully!' });
       router.push('/');
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Signup Failed', description: error.message });
+      // If the account already exists, fall back to sign-in
+      const code = error?.code as string | undefined;
+      if (code === 'auth/email-already-in-use') {
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          toast({ title: 'Signed in successfully!' });
+          router.push('/');
+          return;
+        } catch (signinErr: any) {
+          const msg = signinErr?.message || 'Unable to sign in with provided credentials.';
+          toast({ variant: 'destructive', title: 'Sign in failed', description: msg });
+          return;
+        }
+      }
+      const msg = error?.message || 'Unable to create account.';
+      toast({ variant: 'destructive', title: 'Signup Failed', description: msg });
     }
   };
 
