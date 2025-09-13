@@ -54,7 +54,7 @@ export default function EmotiFriendPage() {
     } else {
         setIsPersonaReady(false);
     }
-  }, [personaImage, personaChat, personaVoiceInfo]);
+  }, [personaImage, personaChat, personaVoiceInfo, toast]);
 
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -177,7 +177,7 @@ export default function EmotiFriendPage() {
                     <h3 className="font-semibold">2. The Style</h3>
                     <p className="text-sm text-center text-muted-foreground">Paste chat logs or text that shows their personality.</p>
                     <Textarea 
-                        placeholder="e.g., 'Hey! How's it going? OMG, you won't believe what happened...'" 
+                                                placeholder="e.g., 'Hey! How&apos;s it going? OMG, you won&apos;t believe what happened..._" 
                         value={personaChat}
                         onChange={e => setPersonaChat(e.target.value)}
                         className="h-32 text-xs"
